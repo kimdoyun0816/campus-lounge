@@ -15,6 +15,7 @@
       --muted: #64748b;
       --border: #e2e8f0;
       --danger: #ef4444;
+      --danger-dark: #dc2626;
       --success: #10b981;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif; }
@@ -71,7 +72,8 @@
     .header-actions {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
+      flex-wrap: wrap;
     }
     .search-box { display: flex; gap: 6px; }
     .search-box input {
@@ -79,7 +81,7 @@
       border: 1px solid var(--border);
       border-radius: 8px;
       font-size: 13px;
-      width: 160px;
+      width: 150px;
       outline: none;
     }
     .search-box input:focus { border-color: var(--primary); }
@@ -106,6 +108,40 @@
       white-space: nowrap;
     }
     .sync-btn:hover { background: #dbeafe; }
+    .admin-toggle-btn {
+      padding: 7px 10px;
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .admin-toggle-btn:hover { background: #e2e8f0; }
+    .admin-toggle-btn.active {
+      background: #fef2f2;
+      color: var(--danger-dark);
+      border-color: #fecaca;
+    }
+
+    /* Admin Banner */
+    #admin-bar {
+      display: none;
+      background: #1e293b;
+      color: #fff;
+      border-radius: 12px;
+      padding: 12px 18px;
+      margin-bottom: 18px;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-size: 13px;
+    }
+    #admin-bar.active { display: flex; }
+    .admin-bar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
     /* Container & Banner */
     .container { max-width: 1140px; margin: 24px auto; padding: 0 20px 60px; }
@@ -140,7 +176,7 @@
     @media (max-width: 820px) {
       .grid-2, .grid-3 { grid-template-columns: 1fr; }
       .nav-wrap { padding: 10px 16px; }
-      .search-box input { width: 120px; }
+      .search-box input { width: 115px; }
     }
     .card {
       background: var(--card);
@@ -188,6 +224,7 @@
     .badge.green { background: #dcfce7; color: #15803d; }
     .badge.orange { background: #ffedd5; color: #c2410c; }
     .badge.purple { background: #f3e8ff; color: #7e22ce; }
+    .badge.red { background: #fee2e2; color: #b91c1c; }
 
     /* Controls & Buttons */
     .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
@@ -212,12 +249,16 @@
       cursor: pointer;
       transition: opacity 0.15s, background 0.15s;
     }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
     .btn:disabled { opacity: 0.55; cursor: not-allowed; }
     .btn-primary { background: var(--primary); color: #fff; }
     .btn-primary:hover:not(:disabled) { background: var(--primary-dark); }
     .btn-outline { background: #fff; border: 1px solid var(--border); color: var(--text); }
     .btn-outline:hover:not(:disabled) { background: var(--bg); }
     .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover:not(:disabled) { background: var(--danger-dark); }
+    .btn-dark-outline { background: transparent; border: 1px solid #64748b; color: #f8fafc; }
+    .btn-dark-outline:hover:not(:disabled) { background: rgba(255, 255, 255, 0.1); }
 
     /* Comment item */
     .comment-item {
@@ -267,6 +308,7 @@
       padding: 24px;
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
     }
+    .modal.modal-sm { max-width: 400px; }
     .form-group { margin-bottom: 14px; }
     .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
     .form-group input, .form-group select, .form-group textarea {
@@ -349,11 +391,25 @@
         <button onclick="handleSearch()">검색</button>
       </div>
       <button class="sync-btn" onclick="fetchData(true)" title="구글 시트 최신 데이터 불러오기">🔄 동기화</button>
+      <button class="admin-toggle-btn" id="admin-header-btn" onclick="handleAdminButton()" title="관리자 로그인 / 해제">🔐 관리자</button>
     </div>
   </div>
 </header>
 
 <main class="container">
+  <!-- 관리자 모드 활성화 배너 -->
+  <div id="admin-bar">
+    <div>
+      <span class="badge red">ADMIN</span>
+      <strong>관리자 모드 활성화 중</strong> · 모든 게시글과 댓글을 수정·삭제할 수 있습니다.
+    </div>
+    <div class="admin-bar-actions">
+      <button class="btn btn-sm btn-danger" id="admin-clear-all-btn" onclick="adminDeleteAllPosts()">모든 글 일괄 삭제</button>
+      <button class="btn btn-sm btn-dark-outline" onclick="adminRestoreSeeds()">샘플 글 복구</button>
+      <button class="btn btn-sm btn-dark-outline" onclick="logoutAdmin()">관리자 종료</button>
+    </div>
+  </div>
+
   <!-- 0. 메인 화면 (Home) -->
   <section id="page-home" class="page-section active">
     <div class="hero">
@@ -513,6 +569,27 @@
   </section>
 </main>
 
+<!-- 관리자 비밀번호 입력 모달 -->
+<div class="modal-backdrop" id="admin-modal" onclick="if(event.target===this) closeModal('admin-modal')">
+  <div class="modal modal-sm">
+    <div class="card-header">
+      <span class="card-title">🔐 관리자 인증</span>
+      <button class="btn btn-outline" onclick="closeModal('admin-modal')">✕</button>
+    </div>
+    <p style="font-size:13px; color:var(--muted); margin-bottom:14px;">
+      관리자 비밀번호를 입력하면 모든 게시글과 댓글을 수정·삭제할 수 있는 권한이 활성화됩니다.
+    </p>
+    <div class="form-group">
+      <label for="admin-pw-input">관리자 비밀번호</label>
+      <input type="password" id="admin-pw-input" placeholder="비밀번호를 입력하세요" onkeydown="if(event.key==='Enter' && !event.isComposing){ event.preventDefault(); loginAdmin(); }" />
+    </div>
+    <div style="display:flex; justify-content:flex-end; gap:8px;">
+      <button class="btn btn-outline" onclick="closeModal('admin-modal')">취소</button>
+      <button class="btn btn-primary" onclick="loginAdmin()">확인</button>
+    </div>
+  </div>
+</div>
+
 <!-- 글쓰기 / 수정 모달 -->
 <div class="modal-backdrop" id="editor-modal" onclick="if(event.target===this) closeModal('editor-modal')">
   <div class="modal">
@@ -583,7 +660,10 @@
 
 <script>
   // 배포된 Google Apps Script 웹 앱 URL
-  const API_URL = "https://script.google.com/macros/s/AKfycbww-uvVpHppzRGKO7rrAcih_M3leS60ecMXG6HAakjVODJMGOgO_tMqjEzfTXbJYZh7/exec";
+  const API_URL = "https://script.google.com/macros/s/AKfycbyxMSfn7Zj2Pz38MGlvY-xAhuQ1CriCw7QH2hSm6ICZo201Exw9l283APQP77WIdwaT/exec";
+
+  // 관리자 비밀번호 (원하는 비밀번호로 변경 가능)
+  const ADMIN_PASSWORD = "admin1234";
 
   // 처음 접속하는 방문자마다 고유한 랜덤 기본 닉네임 자동 생성
   function getOrCreateUser() {
@@ -596,7 +676,6 @@
     return saved;
   }
 
-  // 유틸리티 (초기화 단계에서 사용)
   function safeJSONParse(str, fallback) {
     try {
       const parsed = JSON.parse(str);
@@ -606,8 +685,9 @@
     }
   }
 
-  // 브라우저 개인 설정(localStorage)
+  // 브라우저 개인 설정(localStorage) & 관리자 세션(sessionStorage)
   let currentUser = getOrCreateUser();
+  let isAdmin = sessionStorage.getItem("campus_admin") === "true";
   let scraps = safeJSONParse(localStorage.getItem("campus_scraps"), []).map(String);
   let likedPosts = safeJSONParse(localStorage.getItem("campus_likes"), []).map(String);
   let myPostIds = safeJSONParse(localStorage.getItem("campus_my_posts"), []).map(String);
@@ -626,7 +706,7 @@
   let loadingCount = 0;
   let syncQueue = Promise.resolve();
 
-  // 초기 기본 샘플 데이터 (모든 방문자에게 공통으로 보이는 기본 예시)
+  // 초기 기본 샘플 데이터
   const SEED_DATA = [
     { id: "101", type: "board", category: "정보공유", title: "웹프로그래밍 기말과제 구글 시트 DB 연동 팁 공유", content: "Apps Script로 doGet, doPost만 짜면 GitHub Pages에서도 실시간 DB처럼 쓸 수 있습니다!", author: "컴교24", date: "2026-11-23", likes: 15, extra: "", comments: [{ id: "c1", author: "컴교25", text: "오 진짜 유용하네요 감사합니다!" }] },
     { id: "102", type: "board", category: "자유", title: "오늘 학생회관 돈까스 퀄리티 대박이네요", content: "치즈가 쭉 늘어나서 놀랐습니다. 점심시간 12시 전에 가는 거 추천!", author: "학식러버", date: "2026-11-23", likes: 9, extra: "", comments: [] },
@@ -676,13 +756,21 @@
     return "badge";
   }
 
-  // 본인 브라우저에서 작성한 글·댓글 ID로만 관리 권한 부여 (닉네임 변경 유지 & 타인 사칭 방지)
-  function canManageItem(item) {
+  // 본인 작성 여부(마이페이지 집계용)와 수정·삭제 권한(관리자 포함) 분리
+  function isMyPost(item) {
     return myPostIds.includes(String(item.id));
   }
 
-  function canDeleteComment(comment) {
+  function isMyComment(comment) {
     return Boolean(comment.id && myCommentIds.includes(String(comment.id)));
+  }
+
+  function canManageItem(item) {
+    return isAdmin || isMyPost(item);
+  }
+
+  function canDeleteComment(comment) {
+    return isAdmin || isMyComment(comment);
   }
 
   function showLoader(show) {
@@ -699,16 +787,111 @@
     toastTimer = setTimeout(() => el.classList.remove("show"), 2400);
   }
 
-  // 시트 쓰기 요청을 순서대로 실행해 중복 생성/충돌 방지
+  // 시트 쓰기 요청 직렬화 큐
   function enqueueSync(task) {
     const run = syncQueue.then(task, task);
     syncQueue = run.catch(() => {});
     return run;
   }
 
+  // ===== 관리자 모드 제어 =====
+  function updateAdminUI() {
+    const headerBtn = document.getElementById("admin-header-btn");
+    const adminBar = document.getElementById("admin-bar");
+
+    if (isAdmin) {
+      headerBtn.classList.add("active");
+      headerBtn.textContent = "🛡️ 관리자 ON";
+      adminBar.classList.add("active");
+    } else {
+      headerBtn.classList.remove("active");
+      headerBtn.textContent = "🔐 관리자";
+      adminBar.classList.remove("active");
+    }
+  }
+
+  function handleAdminButton() {
+    if (isAdmin) {
+      logoutAdmin();
+    } else {
+      const input = document.getElementById("admin-pw-input");
+      input.value = "";
+      document.getElementById("admin-modal").classList.add("open");
+      setTimeout(() => input.focus(), 50);
+    }
+  }
+
+  function loginAdmin() {
+    const input = document.getElementById("admin-pw-input");
+    if (input.value === ADMIN_PASSWORD) {
+      isAdmin = true;
+      sessionStorage.setItem("campus_admin", "true");
+      closeModal("admin-modal");
+      updateAdminUI();
+      showToast("관리자 모드가 활성화되었습니다!");
+    } else {
+      showToast("관리자 비밀번호가 일치하지 않습니다.");
+      input.value = "";
+      input.focus();
+    }
+  }
+
+  function logoutAdmin() {
+    isAdmin = false;
+    sessionStorage.removeItem("campus_admin");
+    updateAdminUI();
+    showToast("관리자 모드가 종료되었습니다.");
+  }
+
+  async function adminDeleteAllPosts() {
+    if (!isAdmin) return;
+    if (!confirm("구글 시트에 저장된 글과 샘플 글을 포함해 모든 게시글을 삭제하시겠습니까?\n(삭제된 시트 데이터는 복구할 수 없습니다.)")) return;
+
+    const btn = document.getElementById("admin-clear-all-btn");
+    btn.disabled = true;
+
+    const idsToDeleteFromSheet = Array.from(sheetIds);
+
+    // 화면 및 브라우저 기록 초기화
+    allData = [];
+    deletedSeeds = SEED_DATA.map((s) => String(s.id));
+    scraps = [];
+    likedPosts = [];
+    myPostIds = [];
+    myCommentIds = [];
+    localStorage.setItem("campus_deleted_seeds", JSON.stringify(deletedSeeds));
+    localStorage.setItem("campus_scraps", JSON.stringify(scraps));
+    localStorage.setItem("campus_likes", JSON.stringify(likedPosts));
+    localStorage.setItem("campus_my_posts", JSON.stringify(myPostIds));
+    localStorage.setItem("campus_my_comments", JSON.stringify(myCommentIds));
+
+    closeModal("detail-modal");
+    renderAll();
+
+    // 구글 시트 행 순차 삭제
+    await enqueueSync(async () => {
+      for (const targetId of idsToDeleteFromSheet) {
+        const ok = await syncToSheet({ action: "delete", id: targetId });
+        if (ok) sheetIds.delete(targetId);
+      }
+    });
+
+    btn.disabled = false;
+    showToast("모든 게시글이 삭제되었습니다.");
+  }
+
+  function adminRestoreSeeds() {
+    if (!isAdmin) return;
+    deletedSeeds = [];
+    localStorage.setItem("campus_deleted_seeds", JSON.stringify(deletedSeeds));
+    fetchData(false);
+    showToast("기본 샘플 게시글을 복구했습니다.");
+  }
+
   // ESC 키로 모달 닫기
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
+      closeModal("admin-modal");
       closeModal("editor-modal");
       closeModal("detail-modal");
     }
@@ -717,6 +900,7 @@
   // 초기 실행
   window.addEventListener("DOMContentLoaded", () => {
     document.getElementById("profile-name").textContent = currentUser;
+    updateAdminUI();
     fetchData(false);
   });
 
@@ -749,7 +933,6 @@
             commentsArr = safeJSONParse(row.comments, []);
           }
 
-          // 내가 작성한 비익명 댓글은 항상 현재 닉네임으로 표시
           const normalizedComments = (Array.isArray(commentsArr) ? commentsArr : []).map((c) => ({
             ...c,
             author:
@@ -824,7 +1007,6 @@
     }
   }
 
-  // 시트에 이미 있으면 update, 아직 없으면 create 자동 선택 (직렬화 큐)
   function persistItem(item) {
     return enqueueSync(async () => {
       const idStr = String(item.id);
@@ -1076,9 +1258,8 @@
     const updatedItems = [];
     allData.forEach((item) => {
       let changed = false;
-      const idStr = String(item.id);
 
-      if (item.type !== "anon" && myPostIds.includes(idStr)) {
+      if (item.type !== "anon" && isMyPost(item)) {
         if (item.author !== currentUser) {
           item.author = currentUser;
           changed = true;
@@ -1087,7 +1268,7 @@
 
       if (Array.isArray(item.comments)) {
         item.comments.forEach((c) => {
-          if (c.author !== "익명의 학우" && c.id && myCommentIds.includes(String(c.id))) {
+          if (c.author !== "익명의 학우" && isMyComment(c)) {
             if (c.author !== currentUser) {
               c.author = currentUser;
               changed = true;
@@ -1124,8 +1305,8 @@
 
   function renderMypage() {
     document.getElementById("profile-name").textContent = currentUser;
-    const written = sortByLatest(allData.filter((d) => canManageItem(d)));
-    const commented = sortByLatest(allData.filter((d) => d.comments.some((c) => canDeleteComment(c))));
+    const written = sortByLatest(allData.filter((d) => isMyPost(d)));
+    const commented = sortByLatest(allData.filter((d) => d.comments.some((c) => isMyComment(c))));
     const scrappedList = sortByLatest(allData.filter((d) => scraps.includes(String(d.id))));
 
     document.getElementById("my-post-count").textContent = written.length;
@@ -1189,10 +1370,16 @@
     const extraGroup = document.getElementById("edit-extra-group");
     const authorHint = document.getElementById("editor-author-hint");
 
-    authorHint.textContent =
-      type === "anon"
-        ? "작성자: 익명의 학우 (대나무숲은 익명으로 등록됩니다)"
-        : `작성자: ${currentUser} (마이페이지에서 닉네임 변경 가능)`;
+    if (existingItem) {
+      authorHint.textContent = isAdmin && !isMyPost(existingItem)
+        ? `🛡️ 관리자 권한으로 '${existingItem.author}'님의 글을 수정 중입니다.`
+        : `작성자: ${existingItem.author}`;
+    } else {
+      authorHint.textContent =
+        type === "anon"
+          ? "작성자: 익명의 학우 (대나무숲은 익명으로 등록됩니다)"
+          : `작성자: ${currentUser} (마이페이지에서 닉네임 변경 가능)`;
+    }
 
     if (type === "board") {
       document.getElementById("editor-modal-title").textContent = existingItem ? "게시글 수정" : "새 게시글 작성";
@@ -1244,7 +1431,7 @@
     try {
       if (id) {
         const target = allData.find((d) => String(d.id) === String(id));
-        if (target) {
+        if (target && canManageItem(target)) {
           target.category = category;
           target.title = title;
           target.content = content;
@@ -1318,6 +1505,7 @@
       extraBox.style.display = "none";
     }
 
+    // 본인 작성 글이거나 관리자 모드일 때 수정/삭제 버튼 표시
     document.getElementById("detail-owner-btns").style.display = canManageItem(item) ? "flex" : "none";
 
     updateLikeBtn(item);
@@ -1397,6 +1585,7 @@
   async function deleteComment(index) {
     const item = allData.find((d) => String(d.id) === String(currentDetailId));
     if (!item || !item.comments[index]) return;
+    if (!canDeleteComment(item.comments[index])) return;
     if (!confirm("댓글을 삭제하시겠습니까?")) return;
 
     const [removed] = item.comments.splice(index, 1);
