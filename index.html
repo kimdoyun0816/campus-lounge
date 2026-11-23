@@ -279,6 +279,14 @@
     }
     .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--primary); }
     .form-group textarea { min-height: 120px; resize: vertical; }
+    .editor-author-hint {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 12px;
+      padding: 6px 10px;
+      background: var(--bg);
+      border-radius: 8px;
+    }
 
     /* Loader & Toast */
     #loader {
@@ -469,11 +477,11 @@
   <section id="page-mypage" class="page-section">
     <div class="card" style="margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
       <div>
-        <h2 style="font-size:18px; margin-bottom:4px;" id="profile-name">도윤(나)</h2>
-        <p style="font-size:13px; color:var(--muted); margin-bottom:10px;">Google Sheets 실시간 DB 연동 계정</p>
+        <h2 style="font-size:18px; margin-bottom:4px;" id="profile-name">학우</h2>
+        <p style="font-size:13px; color:var(--muted); margin-bottom:10px;">닉네임을 변경해도 기존 작성글과 댓글은 그대로 유지됩니다.</p>
         <div style="display:flex; gap:6px; align-items:center;">
-          <input type="text" id="nickname-input" placeholder="새 닉네임 입력" style="padding:6px 10px; border:1px solid var(--border); border-radius:8px; font-size:13px; width:150px;" onkeydown="if(event.key==='Enter' && !event.isComposing){ event.preventDefault(); updateNickname(); }" />
-          <button class="btn btn-outline" style="padding:6px 12px;" onclick="updateNickname()">닉네임 변경</button>
+          <input type="text" id="nickname-input" placeholder="새 닉네임 입력" style="padding:6px 10px; border:1px solid var(--border); border-radius:8px; font-size:13px; width:160px;" onkeydown="if(event.key==='Enter' && !event.isComposing){ event.preventDefault(); updateNickname(); }" />
+          <button class="btn btn-outline" id="nickname-save-btn" style="padding:6px 12px;" onclick="updateNickname()">닉네임 변경</button>
         </div>
       </div>
       <div style="display:flex; gap:20px; text-align:center;">
@@ -512,6 +520,7 @@
       <span class="card-title" id="editor-modal-title">새 글 작성</span>
       <button class="btn btn-outline" onclick="closeModal('editor-modal')">✕</button>
     </div>
+    <div class="editor-author-hint" id="editor-author-hint"></div>
     <input type="hidden" id="edit-id" />
     <input type="hidden" id="edit-type" />
     <div class="form-group">
@@ -574,13 +583,34 @@
 
 <script>
   // 배포된 Google Apps Script 웹 앱 URL
-  const API_URL = "https://script.google.com/macros/s/AKfycbyzLkBKdgntj8XAxsLDY3zYdwgK-aGJxVi-sj4LJQYIRqe0F3RyTTMScEv93xdWr25u/exec";
+  const API_URL = "https://script.google.com/macros/s/AKfycbww-uvVpHppzRGKO7rrAcih_M3leS60ecMXG6HAakjVODJMGOgO_tMqjEzfTXbJYZh7/exec";
+
+  // 처음 접속하는 방문자마다 고유한 랜덤 기본 닉네임 자동 생성
+  function getOrCreateUser() {
+    let saved = localStorage.getItem("campus_user");
+    if (!saved || !saved.trim()) {
+      const randNum = Math.floor(1000 + Math.random() * 9000);
+      saved = `학우_${randNum}`;
+      localStorage.setItem("campus_user", saved);
+    }
+    return saved;
+  }
+
+  // 유틸리티 (초기화 단계에서 사용)
+  function safeJSONParse(str, fallback) {
+    try {
+      const parsed = JSON.parse(str);
+      return parsed !== null && parsed !== undefined ? parsed : fallback;
+    } catch {
+      return fallback;
+    }
+  }
 
   // 브라우저 개인 설정(localStorage)
-  let currentUser = localStorage.getItem("campus_user") || "도윤(나)";
+  let currentUser = getOrCreateUser();
   let scraps = safeJSONParse(localStorage.getItem("campus_scraps"), []).map(String);
   let likedPosts = safeJSONParse(localStorage.getItem("campus_likes"), []).map(String);
-  let myPostIds = safeJSONParse(localStorage.getItem("campus_my_posts"), ["101", "201"]).map(String);
+  let myPostIds = safeJSONParse(localStorage.getItem("campus_my_posts"), []).map(String);
   let myCommentIds = safeJSONParse(localStorage.getItem("campus_my_comments"), []).map(String);
   let deletedSeeds = safeJSONParse(localStorage.getItem("campus_deleted_seeds"), []).map(String);
 
@@ -596,27 +626,17 @@
   let loadingCount = 0;
   let syncQueue = Promise.resolve();
 
-  // 초기 기본 샘플 데이터
+  // 초기 기본 샘플 데이터 (모든 방문자에게 공통으로 보이는 기본 예시)
   const SEED_DATA = [
-    { id: "101", type: "board", category: "정보공유", title: "웹프로그래밍 기말과제 구글 시트 DB 연동 팁 공유", content: "Apps Script로 doGet, doPost만 짜면 GitHub Pages에서도 실시간 DB처럼 쓸 수 있습니다!", author: "도윤(나)", date: "2026-11-23", likes: 15, extra: "", comments: [{ id: "c1", author: "컴교25", text: "오 진짜 유용하네요 감사합니다!" }] },
+    { id: "101", type: "board", category: "정보공유", title: "웹프로그래밍 기말과제 구글 시트 DB 연동 팁 공유", content: "Apps Script로 doGet, doPost만 짜면 GitHub Pages에서도 실시간 DB처럼 쓸 수 있습니다!", author: "컴교24", date: "2026-11-23", likes: 15, extra: "", comments: [{ id: "c1", author: "컴교25", text: "오 진짜 유용하네요 감사합니다!" }] },
     { id: "102", type: "board", category: "자유", title: "오늘 학생회관 돈까스 퀄리티 대박이네요", content: "치즈가 쭉 늘어나서 놀랐습니다. 점심시간 12시 전에 가는 거 추천!", author: "학식러버", date: "2026-11-23", likes: 9, extra: "", comments: [] },
     { id: "103", type: "board", category: "질문", title: "중도 3층 열람실 콘센트 자리 몇 시쯤 차나요?", content: "오후 2시 공강 때 가려는데 자리 있을까요?", author: "시험기간", date: "2026-11-22", likes: 4, extra: "", comments: [{ id: "c2", author: "도서관지박령", text: "2시면 창가 쪽은 다 차고 안쪽은 여유 있어요" }] },
-    { id: "201", type: "study", category: "코딩/개발", title: "프론트엔드 포트폴리오 제작 스터디원 모집 (3/4명)", content: "HTML, CSS, JS로 각자 웹서비스 하나씩 완성해서 깃허브 배포까지 같이 하실 분 구합니다.", author: "도윤(나)", date: "2026-11-23", likes: 7, extra: "모집중 · 매주 수요일 18:00 대면", comments: [] },
+    { id: "201", type: "study", category: "코딩/개발", title: "프론트엔드 포트폴리오 제작 스터디원 모집 (3/4명)", content: "HTML, CSS, JS로 각자 웹서비스 하나씩 완성해서 깃허브 배포까지 같이 하실 분 구합니다.", author: "프론트팀장", date: "2026-11-23", likes: 7, extra: "모집중 · 매주 수요일 18:00 대면", comments: [] },
     { id: "202", type: "study", category: "어학/자격증", title: "겨울방학 토익 850+ 목표 아침 인증 스터디", content: "매일 오전 9시 단어 시험 인증하고 주 1회 모의고사 풀이 진행합니다.", author: "영문과24", date: "2026-11-21", likes: 5, extra: "모집중 · 온라인(Zoom)", comments: [] },
     { id: "301", type: "food", category: "정문/후문맛집", title: "정문 앞 할매국밥 (수육국밥 8,000원)", content: "양 진짜 많고 깍두기가 예술입니다. 공강 때 든든하게 먹기 최고!", author: "국밥부장관", date: "2026-11-20", likes: 12, extra: "⭐ 4.8 / 정문 도보 3분", comments: [] },
     { id: "302", type: "food", category: "카공추천", title: "후문 라운지 카페 (아메리카노 2,500원)", content: "모든 테이블에 콘센트 있고 의자가 편해서 밤샘 과제하기 좋습니다.", author: "카공족", date: "2026-11-19", likes: 10, extra: "⭐ 4.9 / 후문 건너편 2층", comments: [] },
     { id: "401", type: "anon", category: "익명", title: "기말과제 시즌 시작되니까 밤낮이 다 바뀌었네요 ㅠㅠ", content: "다들 기말 프로젝트 화이팅합시다... 카페인으로 버티는 중", author: "익명의 학우", date: "2026-11-23", likes: 18, extra: "", comments: [] }
   ];
-
-  // 유틸리티 함수
-  function safeJSONParse(str, fallback) {
-    try {
-      const parsed = JSON.parse(str);
-      return parsed !== null && parsed !== undefined ? parsed : fallback;
-    } catch {
-      return fallback;
-    }
-  }
 
   function escapeHTML(str) {
     return String(str ?? "")
@@ -656,16 +676,13 @@
     return "badge";
   }
 
+  // 본인 브라우저에서 작성한 글·댓글 ID로만 관리 권한 부여 (닉네임 변경 유지 & 타인 사칭 방지)
   function canManageItem(item) {
-    if (item.type === "anon") return myPostIds.includes(String(item.id));
-    return item.author === currentUser || myPostIds.includes(String(item.id));
+    return myPostIds.includes(String(item.id));
   }
 
   function canDeleteComment(comment) {
-    if (comment.author === "익명의 학우") {
-      return Boolean(comment.id && myCommentIds.includes(String(comment.id)));
-    }
-    return comment.author === currentUser || Boolean(comment.id && myCommentIds.includes(String(comment.id)));
+    return Boolean(comment.id && myCommentIds.includes(String(comment.id)));
   }
 
   function showLoader(show) {
@@ -722,6 +739,7 @@
           if (!row.id && !row.title) continue;
 
           const idStr = String(row.id || Date.now());
+          const rowType = String(row.type || "board");
           sheetIds.add(idStr);
 
           let commentsArr = [];
@@ -731,17 +749,29 @@
             commentsArr = safeJSONParse(row.comments, []);
           }
 
+          // 내가 작성한 비익명 댓글은 항상 현재 닉네임으로 표시
+          const normalizedComments = (Array.isArray(commentsArr) ? commentsArr : []).map((c) => ({
+            ...c,
+            author:
+              c.author !== "익명의 학우" && c.id && myCommentIds.includes(String(c.id))
+                ? currentUser
+                : String(c.author || "익명")
+          }));
+
           cleanedRows.push({
             id: idStr,
-            type: String(row.type || "board"),
+            type: rowType,
             category: String(row.category || "자유"),
             title: String(row.title || "(제목 없음)"),
             content: String(row.content || ""),
-            author: String(row.author || "익명"),
+            author:
+              rowType !== "anon" && myPostIds.includes(idStr)
+                ? currentUser
+                : String(row.author || "익명"),
             date: formatDate(row.date),
             likes: Math.max(0, Number(row.likes) || 0),
             extra: String(row.extra || ""),
-            comments: Array.isArray(commentsArr) ? commentsArr : []
+            comments: normalizedComments
           });
         }
 
@@ -794,7 +824,7 @@
     }
   }
 
-  // 시트에 이미 있으면 update, 샘플 글 등 아직 시트에 없으면 create 자동 선택 (직렬화 큐)
+  // 시트에 이미 있으면 update, 아직 없으면 create 자동 선택 (직렬화 큐)
   function persistItem(item) {
     return enqueueSync(async () => {
       const idStr = String(item.id);
@@ -1027,20 +1057,62 @@
     if (ok) showToast("익명 글이 등록되었습니다!");
   }
 
-  // 5. 마이페이지
-  function updateNickname() {
+  // 5. 마이페이지 (닉네임 변경 시 내 작성글·댓글 작성자명 일괄 동기화)
+  async function updateNickname() {
     const input = document.getElementById("nickname-input");
+    const btn = document.getElementById("nickname-save-btn");
+    if (btn.disabled) return;
+
     const name = input.value.trim();
     if (!name) return showToast("변경할 닉네임을 입력해 주세요.");
     if (name.length > 15) return showToast("닉네임은 15자 이내로 입력해 주세요.");
     if (name === "익명의 학우" || name === "익명") return showToast("사용할 수 없는 닉네임입니다.");
+    if (name === currentUser) return showToast("현재 사용 중인 닉네임입니다.");
 
+    btn.disabled = true;
     currentUser = name;
     localStorage.setItem("campus_user", currentUser);
+
+    const updatedItems = [];
+    allData.forEach((item) => {
+      let changed = false;
+      const idStr = String(item.id);
+
+      if (item.type !== "anon" && myPostIds.includes(idStr)) {
+        if (item.author !== currentUser) {
+          item.author = currentUser;
+          changed = true;
+        }
+      }
+
+      if (Array.isArray(item.comments)) {
+        item.comments.forEach((c) => {
+          if (c.author !== "익명의 학우" && c.id && myCommentIds.includes(String(c.id))) {
+            if (c.author !== currentUser) {
+              c.author = currentUser;
+              changed = true;
+            }
+          }
+        });
+      }
+
+      if (changed) updatedItems.push(item);
+    });
+
     document.getElementById("profile-name").textContent = currentUser;
     input.value = "";
-    renderMypage();
-    showToast(`닉네임이 '${currentUser}'(으)로 변경되었습니다.`);
+    renderAll();
+    showToast(`닉네임이 '${currentUser}'(으)로 변경되었습니다. 기존 글도 유지됩니다!`);
+
+    try {
+      for (const item of updatedItems) {
+        if (sheetIds.has(String(item.id))) {
+          await persistItem(item);
+        }
+      }
+    } finally {
+      btn.disabled = false;
+    }
   }
 
   function switchMyTab(tab, btn) {
@@ -1115,6 +1187,12 @@
     document.getElementById("edit-id").value = existingItem ? String(existingItem.id) : "";
     const catSelect = document.getElementById("edit-category");
     const extraGroup = document.getElementById("edit-extra-group");
+    const authorHint = document.getElementById("editor-author-hint");
+
+    authorHint.textContent =
+      type === "anon"
+        ? "작성자: 익명의 학우 (대나무숲은 익명으로 등록됩니다)"
+        : `작성자: ${currentUser} (마이페이지에서 닉네임 변경 가능)`;
 
     if (type === "board") {
       document.getElementById("editor-modal-title").textContent = existingItem ? "게시글 수정" : "새 게시글 작성";
@@ -1219,12 +1297,10 @@
     document.getElementById("detail-meta").textContent = `${item.author} · ${item.date}`;
     document.getElementById("comment-input").value = "";
 
-    // 이전 모달 작업으로 버튼이 잠겨있지 않도록 초기화
     document.getElementById("detail-like-btn").disabled = false;
     document.getElementById("detail-delete-btn").disabled = false;
     document.getElementById("comment-submit-btn").disabled = false;
 
-    // 익명 한 줄 글일 경우 제목과 동일한 본문 중복 출력 방지
     const contentEl = document.getElementById("detail-content");
     if (item.type === "anon" && item.content === item.title) {
       contentEl.style.display = "none";
@@ -1242,14 +1318,11 @@
       extraBox.style.display = "none";
     }
 
-    // 본인 작성 글일 때만 수정/삭제 버튼 표시
     document.getElementById("detail-owner-btns").style.display = canManageItem(item) ? "flex" : "none";
 
-    // 공감/스크랩 버튼 상태 동기화
     updateLikeBtn(item);
     updateScrapBtn(currentDetailId);
 
-    // 게시판 종류에 따른 댓글 안내 문구
     const commentInput = document.getElementById("comment-input");
     const commentHeading = document.getElementById("detail-comment-heading");
     if (item.type === "study") {
@@ -1413,7 +1486,6 @@
     closeModal("detail-modal");
     renderAll();
 
-    // 대기열을 통해 앞선 create가 끝난 뒤 안전하게 delete 실행
     await enqueueSync(async () => {
       if (sheetIds.has(targetId)) {
         const ok = await syncToSheet({ action: "delete", id: targetId });
