@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CAMPUS LOUNGE - 대학생 올인원 커뮤니티</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --primary-light: #eff6ff;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --danger: #ef4444;
+      --success: #10b981;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; }
+    body { background: var(--bg); color: var(--text); line-height: 1.5; }
+    
+    /* Header */
+    header {
+      background: var(--card); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .nav-wrap {
+      max-width: 1140px; margin: 0 auto; padding: 0 20px;
+      height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .logo { font-size: 20px; font-weight: 800; color: var(--primary); cursor: pointer; letter-spacing: -0.5px; white-space: nowrap; }
+    .nav-menu { display: flex; gap: 6px; overflow-x: auto; }
+    .nav-btn {
+      background: none; border: none; padding: 8px 14px; border-radius: 8px;
+      font-size: 14px; font-weight: 600; color: var(--muted); cursor: pointer; white-space: nowrap;
+    }
+    .nav-btn:hover { background: var(--primary-light); color: var(--primary); }
+    .nav-btn.active { background: var(--primary); color: #fff; }
+    .search-box { display: flex; gap: 6px; }
+    .search-box input {
+      padding: 7px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; width: 170px;
+    }
+    .search-box button {
+      padding: 7px 12px; background: var(--text); color: #fff; border: none; border-radius: 8px; font-size: 13px; cursor: pointer;
+    }
+
+    /* Container & Banner */
+    .container { max-width: 1140px; margin: 24px auto; padding: 0 20px; }
+    .hero {
+      background: linear-gradient(135deg, #1e3a8a, #2563eb); color: #fff;
+      border-radius: 16px; padding: 32px; margin-bottom: 24px;
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;
+    }
+    .hero h1 { font-size: 24px; margin-bottom: 8px; }
+    .hero p { font-size: 14px; opacity: 0.9; }
+    .hero-btn {
+      background: #fff; color: var(--primary); border: none; padding: 10px 18px;
+      border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 14px;
+    }
+
+    /* Grid & Cards */
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    @media (max-width: 768px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .search-box input { width: 110px; }
+    }
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .card-title { font-size: 16px; font-weight: 700; }
+    .more-link { font-size: 12px; color: var(--primary); cursor: pointer; font-weight: 600; }
+
+    /* List items */
+    .list-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 0; border-bottom: 1px solid var(--border); cursor: pointer;
+    }
+    .list-row:last-child { border-bottom: none; }
+    .list-row:hover .row-title { color: var(--primary); }
+    .badge {
+      display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;
+      background: var(--primary-light); color: var(--primary); margin-right: 6px;
+    }
+    .badge.green { background: #dcfce7; color: #15803d; }
+    .badge.orange { background: #ffedd5; color: #c2410c; }
+
+    /* Controls & Buttons */
+    .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+    .tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tab-btn {
+      padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border);
+      background: var(--card); font-size: 13px; cursor: pointer; font-weight: 600; color: var(--muted);
+    }
+    .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn {
+      padding: 8px 16px; border-radius: 8px; border: none; font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-outline { background: #fff; border: 1px solid var(--border); color: var(--text); }
+    .btn-danger { background: var(--danger); color: #fff; }
+
+    /* Forms & Modal */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5);
+      display: none; align-items: center; justify-content: center; z-index: 200; padding: 16px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: #fff; border-radius: 16px; width: 100%; max-width: 560px; max-height: 90vh;
+      overflow-y: auto; padding: 24px;
+    }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;
+    }
+    .form-group textarea { min-height: 110px; resize: vertical; }
+
+    /* Loading Overlay */
+    #loader {
+      position: fixed; top: 74px; right: 20px; background: #0f172a; color: #fff;
+      padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 600;
+      display: none; z-index: 300; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    /* Page section visibility */
+    .page-section { display: none; }
+    .page-section.active { display: block; }
+  </style>
+</head>
+<body>
+
+<div id="loader">Google Sheets DB 동기화 중...</div>
+
+<header>
+  <div class="nav-wrap">
+    <div class="logo" onclick="navigate('home')">CAMPUS LOUNGE</div>
+    <nav class="nav-menu">
+      <button class="nav-btn" data-page="board" onclick="navigate('board')">전체/자유 게시판</button>
+      <button class="nav-btn" data-page="study" onclick="navigate('study')">스터디/팀원 모집</button>
+      <button class="nav-btn" data-page="food" onclick="navigate('food')">캠퍼스 맛집/꿀팁</button>
+      <button class="nav-btn" data-page="anon" onclick="navigate('anon')">익명 대나무숲</button>
+      <button class="nav-btn" data-page="mypage" onclick="navigate('mypage')">마이페이지</button>
+    </nav>
+    <div class="search-box">
+      <input type="text" id="globalSearchInput" placeholder="통합 검색..." onkeyup="if(event.key==='Enter') handleSearch()" />
+      <button onclick="handleSearch()">검색</button>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <!-- 0. 메인 화면 (Home) -->
+  <section id="page-home" class="page-section active">
+    <div class="hero">
+      <div>
+        <h1>우리 대학생들의 캠퍼스 라운지</h1>
+        <p>자유로운 정보 공유부터 스터디 팀원 모집, 학교 앞 맛집 리뷰까지 한곳에서 해결하세요.</p>
+      </div>
+      <button class="hero-btn" onclick="navigate('board')">게시판 바로가기 →</button>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🔥 실시간 인기 게시글 TOP 5</span>
+          <span class="more-link" onclick="navigate('board')">더보기</span>
+        </div>
+        <div id="home-top-posts"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📚 모집 중인 최신 스터디</span>
+          <span class="more-link" onclick="navigate('study')">전체보기</span>
+        </div>
+        <div id="home-studies"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🍱 오늘의 학식 메뉴 (학생회관)</span>
+          <span class="badge green">운영중 11:30~14:00</span>
+        </div>
+        <div class="list-row">
+          <div><span class="badge">중식 A코너</span> <strong>치즈돈까스 & 우동 세트</strong></div>
+          <span style="font-size:13px; color:var(--muted);">5,500원</span>
+        </div>
+        <div class="list-row">
+          <div><span class="badge">중식 B코너</span> <strong>제육덮밥 & 콩나물국</strong></div>
+          <span style="font-size:13px; color:var(--muted);">5,000원</span>
+        </div>
+        <div class="list-row">
+          <div><span class="badge orange">석식 특식</span> <strong>순두부찌개 & 계란말이</strong></div>
+          <span style="font-size:13px; color:var(--muted);">5,000원</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">☕ 캠퍼스 추천 맛집 & 카공</span>
+          <span class="more-link" onclick="navigate('food')">리뷰보기</span>
+        </div>
+        <div id="home-foods"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 1. 전체/자유 게시판 -->
+  <section id="page-board" class="page-section">
+    <div class="toolbar">
+      <div class="tabs" id="board-tabs">
+        <button class="tab-btn active" onclick="filterBoard('전체', this)">전체</button>
+        <button class="tab-btn" onclick="filterBoard('자유', this)">자유</button>
+        <button class="tab-btn" onclick="filterBoard('질문', this)">질문</button>
+        <button class="tab-btn" onclick="filterBoard('정보공유', this)">정보공유</button>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <select id="board-sort" onchange="renderBoard()" style="padding:7px; border-radius:8px; border:1px solid var(--border);">
+          <option value="latest">최신순</option>
+          <option value="likes">추천순</option>
+        </select>
+        <button class="btn btn-primary" onclick="openEditorModal('board')">+ 글쓰기</button>
+      </div>
+    </div>
+    <div class="card" id="board-list"></div>
+  </section>
+
+  <!-- 2. 스터디/팀원 모집 -->
+  <section id="page-study" class="page-section">
+    <div class="toolbar">
+      <div class="tabs" id="study-tabs">
+        <button class="tab-btn active" onclick="filterStudy('전체', this)">전체</button>
+        <button class="tab-btn" onclick="filterStudy('코딩/개발', this)">코딩/개발</button>
+        <button class="tab-btn" onclick="filterStudy('어학/자격증', this)">어학/자격증</button>
+        <button class="tab-btn" onclick="filterStudy('공모전', this)">공모전</button>
+      </div>
+      <button class="btn btn-primary" onclick="openEditorModal('study')">+ 모집글 작성</button>
+    </div>
+    <div class="grid-3" id="study-list"></div>
+  </section>
+
+  <!-- 3. 캠퍼스 맛집/꿀팁 -->
+  <section id="page-food" class="page-section">
+    <div class="toolbar">
+      <div class="tabs" id="food-tabs">
+        <button class="tab-btn active" onclick="filterFood('전체', this)">전체</button>
+        <button class="tab-btn" onclick="filterFood('정문/후문맛집', this)">#정문/후문맛집</button>
+        <button class="tab-btn" onclick="filterFood('가성비', this)">#가성비</button>
+        <button class="tab-btn" onclick="filterFood('카공추천', this)">#카공추천</button>
+      </div>
+      <button class="btn btn-primary" onclick="openEditorModal('food')">+ 맛집 제보하기</button>
+    </div>
+    <div class="grid-3" id="food-list"></div>
+  </section>
+
+  <!-- 4. 익명 대나무숲 -->
+  <section id="page-anon" class="page-section">
+    <div class="card" style="margin-bottom:20px;">
+      <h3 style="font-size:16px; margin-bottom:10px;">🎋 익명 대나무숲 외치기</h3>
+      <div style="display:flex; gap:10px;">
+        <input type="text" id="anon-quick-input" placeholder="학업, 연애, 일상 고민을 익명으로 자유롭게 남겨보세요..." style="flex:1; padding:10px; border:1px solid var(--border); border-radius:8px;" onkeyup="if(event.key==='Enter') submitQuickAnon()" />
+        <button class="btn btn-primary" onclick="submitQuickAnon()">등록</button>
+      </div>
+    </div>
+    <div id="anon-list" style="display:flex; flex-direction:column; gap:14px;"></div>
+  </section>
+
+  <!-- 5. 마이페이지 -->
+  <section id="page-mypage" class="page-section">
+    <div class="card" style="margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+      <div>
+        <h2 style="font-size:18px;">도윤님 (컴퓨터교육과 2학년)</h2>
+        <p style="font-size:13px; color:var(--muted);">Google Sheets 실시간 DB 연동 계정</p>
+      </div>
+      <div style="display:flex; gap:16px; text-align:center;">
+        <div><strong id="my-post-count" style="font-size:18px; color:var(--primary);">0</strong><div style="font-size:12px; color:var(--muted);">작성글</div></div>
+        <div><strong id="my-scrap-count" style="font-size:18px; color:var(--primary);">0</strong><div style="font-size:12px; color:var(--muted);">스크랩</div></div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchMyTab('written', this)">내가 쓴 글</button>
+        <button class="tab-btn" onclick="switchMyTab('scrapped', this)">스크랩한 글</button>
+      </div>
+    </div>
+    <div class="card" id="mypage-list"></div>
+  </section>
+
+  <!-- 통합 검색 결과 화면 -->
+  <section id="page-search" class="page-section">
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title" id="search-result-title">검색 결과</span>
+        <button class="btn btn-outline" onclick="navigate('home')">메인으로</button>
+      </div>
+      <div id="search-result-list"></div>
+    </div>
+  </section>
+</main>
+
+<!-- 글쓰기 / 수정 모달 -->
+<div class="modal-backdrop" id="editor-modal">
+  <div class="modal">
+    <div class="card-header">
+      <span class="card-title" id="editor-modal-title">새 글 작성</span>
+      <button class="btn btn-outline" onclick="closeModal('editor-modal')">✕</button>
+    </div>
+    <input type="hidden" id="edit-id" />
+    <input type="hidden" id="edit-type" />
+    <div class="form-group">
+      <label>카테고리 / 태그</label>
+      <select id="edit-category"></select>
+    </div>
+    <div class="form-group">
+      <label id="edit-title-label">제목</label>
+      <input type="text" id="edit-title" placeholder="제목을 입력하세요" />
+    </div>
+    <div class="form-group" id="edit-extra-group" style="display:none;">
+      <label id="edit-extra-label">추가 정보</label>
+      <input type="text" id="edit-extra" placeholder="" />
+    </div>
+    <div class="form-group">
+      <label>내용</label>
+      <textarea id="edit-content" placeholder="내용을 입력하세요"></textarea>
+    </div>
+    <div style="display:flex; justify-content:flex-end; gap:8px;">
+      <button class="btn btn-outline" onclick="closeModal('editor-modal')">취소</button>
+      <button class="btn btn-primary" onclick="saveItem()">저장하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 상세 보기 & 댓글 / 스터디 지원 모달 -->
+<div class="modal-backdrop" id="detail-modal">
+  <div class="modal">
+    <div class="card-header">
+      <span class="badge" id="detail-badge">카테고리</span>
+      <button class="btn btn-outline" onclick="closeModal('detail-modal')">✕</button>
+    </div>
+    <h2 id="detail-title" style="font-size:20px; margin-bottom:8px;">제목</h2>
+    <div style="font-size:12px; color:var(--muted); margin-bottom:16px;" id="detail-meta">작성자 · 날짜</div>
+    <div id="detail-extra-box" style="background:var(--primary-light); padding:10px 14px; border-radius:8px; font-size:13px; margin-bottom:14px; display:none;"></div>
+    <p id="detail-content" style="font-size:14px; white-space:pre-line; margin-bottom:20px; min-height:60px;"></p>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:16px; border-bottom:1px solid var(--border); margin-bottom:16px;">
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-outline" onclick="toggleLike()">👍 공감 (<span id="detail-likes">0</span>)</button>
+        <button class="btn btn-outline" id="detail-scrap-btn" onclick="toggleScrap()">⭐ 스크랩</button>
+      </div>
+      <div id="detail-owner-btns" style="display:flex; gap:6px;">
+        <button class="btn btn-outline" onclick="openEditCurrent()">수정</button>
+        <button class="btn btn-danger" onclick="deleteCurrent()">삭제</button>
+      </div>
+    </div>
+
+    <!-- 댓글 영역 -->
+    <div>
+      <h4 style="font-size:14px; margin-bottom:10px;">댓글 / 신청 내역 (<span id="detail-comment-count">0</span>)</h4>
+      <div id="detail-comments" style="max-height:180px; overflow-y:auto; margin-bottom:12px;"></div>
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="comment-input" placeholder="댓글이나 스터디 지원 동기를 입력하세요..." style="flex:1; padding:8px 12px; border:1px solid var(--border); border-radius:8px; font-size:13px;" onkeyup="if(event.key==='Enter') addComment()" />
+        <button class="btn btn-primary" onclick="addComment()">등록</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ★ 2단계에서 배포한 Google Apps Script 웹 앱 URL을 아래 따옴표 안에 붙여넣으세요!
+  const API_URL = "https://script.google.com/macros/s/AKfycbyzLkBKdgntj8XAxsLDY3zYdwgK-aGJxVi-sj4LJQYIRqe0F3RyTTMScEv93xdWr25u/exec";
+
+  const CURRENT_USER = "도윤(나)";
+  let allData = [];
+  let currentDetailId = null;
+  let boardFilter = "전체";
+  let studyFilter = "전체";
+  let foodFilter = "전체";
+  let myTab = "written";
+  let scraps = JSON.parse(localStorage.getItem("campus_scraps") || "[]");
+
+  // 초기 기본 데이터 (DB가 비어있을 때 자동 표시용)
+  const SEED_DATA = [
+    { id: 101, type: "board", category: "정보공유", title: "웹프로그래밍 기말과제 구글 시트 DB 연동 팁 공유", content: "Apps Script로 doGet, doPost만 짜면 GitHub Pages에서도 실시간 DB처럼 쓸 수 있습니다!", author: "도윤(나)", date: "2026-11-23", likes: 15, extra: "", comments: [{ author: "컴교25", text: "오 진짜 유용하네요 감사합니다!" }] },
+    { id: 102, type: "board", category: "자유", title: "오늘 학생회관 돈까스 퀄리티 대박이네요", content: "치즈가 쭉 늘어나서 놀랐습니다. 점심시간 12시 전에 가는 거 추천!", author: "학식러버", date: "2026-11-23", likes: 9, extra: "", comments: [] },
+    { id: 103, type: "board", category: "질문", title: "중도 3층 열람실 콘센트 자리 몇 시쯤 차나요?", content: "오후 2시 공강 때 가려는데 자리 있을까요?", author: "시험기간", date: "2026-11-22", likes: 4, extra: "", comments: [{ author: "도서관지박령", text: "2시면 창가 쪽은 다 차고 안쪽은 여유 있어요" }] },
+    { id: 201, type: "study", category: "코딩/개발", title: "프론트엔드 포트폴리오 제작 스터디원 모집 (3/4명)", content: "HTML, CSS, JS로 각자 웹서비스 하나씩 완성해서 깃허브 배포까지 같이 하실 분 구합니다.", author: "도윤(나)", date: "2026-11-23", likes: 7, extra: "모집중 · 매주 수요일 18:00 대면", comments: [] },
+    { id: 202, type: "study", category: "어학/자격증", title: "겨울방학 토익 850+ 목표 아침 인증 스터디", content: "매일 오전 9시 단어 시험 인증하고 주 1회 모의고사 풀이 진행합니다.", author: "영문과24", date: "2026-11-21", likes: 5, extra: "모집중 · 온라인(Zoom)", comments: [] },
+    { id: 301, type: "food", category: "정문/후문맛집", title: "정문 앞 할매국밥 (수육국밥 8,000원)", content: "양 진짜 많고 깍두기가 예술입니다. 공강 때 든든하게 먹기 최고!", author: "국밥부장관", date: "2026-11-20", likes: 12, extra: "⭐ 4.8 / 정문 도보 3분", comments: [] },
+    { id: 302, type: "food", category: "카공추천", title: "후문 라운지 카페 (아메리카노 2,500원)", content: "모든 테이블에 콘센트 있고 의자가 편해서 밤샘 과제하기 좋습니다.", author: "카공족", date: "2026-11-19", likes: 10, extra: "⭐ 4.9 / 후문 건너편 2층", comments: [] },
+    { id: 401, type: "anon", category: "익명", title: "기말과제 시즌 시작되니까 밤낮이 다 바뀌었네요 ㅠㅠ", content: "다들 기말 프로젝트 화이팅합시다... 카페인으로 버티는 중", author: "익명의 학우", date: "2026-11-23", likes: 18, extra: "", comments: [] }
+  ];
+
+  // 페이지 초기화
+  window.onload = () => {
+    fetchData();
+  };
+
+  function showLoader(show) {
+    document.getElementById("loader").style.display = show ? "block" : "none";
+  }
+
+  // Google Sheets DB에서 데이터 불러오기 (READ)
+  async function fetchData() {
+    if (!API_URL.startsWith("http")) {
+      allData = [...SEED_DATA];
+      renderAll();
+      return;
+    }
+    showLoader(true);
+    try {
+      const res = await fetch(API_URL);
+      const json = await res.json();
+      if (json.status === "success") {
+        const sheetRows = json.data.map(row => ({
+          ...row,
+          likes: Number(row.likes || 0),
+          comments: typeof row.comments === "string" && row.comments ? JSON.parse(row.comments) : []
+        }));
+        allData = sheetRows.length > 0 ? sheetRows.reverse() : [...SEED_DATA];
+      }
+    } catch (err) {
+      console.error("DB 불러오기 실패, 기본 데이터로 표시:", err);
+      allData = [...SEED_DATA];
+    }
+    showLoader(false);
+    renderAll();
+  }
+
+  // Google Sheets DB에 전송 (CREATE / UPDATE / DELETE)
+  async function syncToSheet(payload) {
+    if (!API_URL.startsWith("http")) return;
+    showLoader(true);
+    try {
+      await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify(payload)
+      });
+    } catch (err) {
+      console.error("DB 저장 오류:", err);
+    }
+    showLoader(false);
+  }
+
+  // 메뉴 전환
+  function navigate(page) {
+    document.querySelectorAll(".page-section").forEach(el => el.classList.remove("active"));
+    document.getElementById("page-" + page).classList.add("active");
+    document.querySelectorAll(".nav-btn").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.page === page);
+    });
+    renderAll();
+  }
+
+  function renderAll() {
+    renderHome();
+    renderBoard();
+    renderStudy();
+    renderFood();
+    renderAnon();
+    renderMypage();
+  }
+
+  // 0. 메인 화면 렌더링
+  function renderHome() {
+    const boards = allData.filter(d => d.type === "board").sort((a, b) => b.likes - a.likes).slice(0, 5);
+    document.getElementById("home-top-posts").innerHTML = boards.map((p, idx) => `
+      <div class="list-row" onclick="openDetail(${p.id})">
+        <div><strong style="color:var(--primary); margin-right:8px;">${idx + 1}</strong><span class="badge">${p.category}</span><span class="row-title">${p.title}</span></div>
+        <span style="font-size:12px; color:var(--muted);">👍 ${p.likes}</span>
+      </div>
+    `).join("");
+
+    const studies = allData.filter(d => d.type === "study").slice(0, 2);
+    document.getElementById("home-studies").innerHTML = studies.map(s => `
+      <div class="list-row" onclick="openDetail(${s.id})">
+        <div><span class="badge green">${s.category}</span><span class="row-title">${s.title}</span><div style="font-size:12px; color:var(--muted); margin-top:4px;">${s.extra}</div></div>
+      </div>
+    `).join("");
+
+    const foods = allData.filter(d => d.type === "food").slice(0, 3);
+    document.getElementById("home-foods").innerHTML = foods.map(f => `
+      <div class="list-row" onclick="openDetail(${f.id})">
+        <div><span class="badge orange">${f.category}</span><span class="row-title">${f.title}</span></div>
+        <span style="font-size:12px; color:var(--muted);">${f.extra.split("/")[0]}</span>
+      </div>
+    `).join("");
+  }
+
+  // 1. 게시판 렌더링
+  function filterBoard(cat, btn) {
+    boardFilter = cat;
+    document.querySelectorAll("#board-tabs .tab-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    renderBoard();
+  }
+  function renderBoard() {
+    const sort = document.getElementById("board-sort").value;
+    let list = allData.filter(d => d.type === "board" && (boardFilter === "전체" || d.category === boardFilter));
+    if (sort === "likes") list.sort((a, b) => b.likes - a.likes);
+    document.getElementById("board-list").innerHTML = list.length ? list.map(p => `
+      <div class="list-row" onclick="openDetail(${p.id})">
+        <div>
+          <span class="badge">${p.category}</span>
+          <strong class="row-title">${p.title}</strong>
+          <span style="font-size:12px; color:var(--primary); margin-left:4px;">[${p.comments.length}]</span>
+          <div style="font-size:12px; color:var(--muted); margin-top:4px;">${p.author} · ${p.date}</div>
+        </div>
+        <div style="font-size:13px; color:var(--muted);">👍 ${p.likes}</div>
+      </div>
+    `).join("") : "<p style='color:var(--muted); text-align:center; padding:20px;'>등록된 게시글이 없습니다.</p>";
+  }
+
+  // 2. 스터디 렌더링
+  function filterStudy(cat, btn) {
+    studyFilter = cat;
+    document.querySelectorAll("#study-tabs .tab-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    renderStudy();
+  }
+  function renderStudy() {
+    const list = allData.filter(d => d.type === "study" && (studyFilter === "전체" || d.category === studyFilter));
+    document.getElementById("study-list").innerHTML = list.map(s => `
+      <div class="card" style="cursor:pointer;" onclick="openDetail(${s.id})">
+        <div style="margin-bottom:8px;"><span class="badge green">${s.category}</span></div>
+        <h3 style="font-size:16px; margin-bottom:8px;">${s.title}</h3>
+        <p style="font-size:13px; color:var(--muted); margin-bottom:12px;">${s.content.slice(0, 60)}...</p>
+        <div style="font-size:12px; font-weight:600; color:var(--primary);">${s.extra || "모집중"}</div>
+      </div>
+    `).join("");
+  }
+
+  // 3. 맛집 렌더링
+  function filterFood(cat, btn) {
+    foodFilter = cat;
+    document.querySelectorAll("#food-tabs .tab-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    renderFood();
+  }
+  function renderFood() {
+    const list = allData.filter(d => d.type === "food" && (foodFilter === "전체" || d.category === foodFilter));
+    document.getElementById("food-list").innerHTML = list.map(f => `
+      <div class="card" style="cursor:pointer;" onclick="openDetail(${f.id})">
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+          <span class="badge orange">#${f.category}</span>
+          <span style="font-size:12px; font-weight:700;">${f.extra}</span>
+        </div>
+        <h3 style="font-size:16px; margin-bottom:8px;">${f.title}</h3>
+        <p style="font-size:13px; color:var(--muted);">${f.content}</p>
+      </div>
+    `).join("");
+  }
+
+  // 4. 익명 대나무숲 렌더링 & 빠른 등록
+  function renderAnon() {
+    const list = allData.filter(d => d.type === "anon");
+    document.getElementById("anon-list").innerHTML = list.map(a => `
+      <div class="card" style="cursor:pointer;" onclick="openDetail(${a.id})">
+        <div style="font-size:12px; color:var(--muted); margin-bottom:6px;">익명의 학우 · ${a.date}</div>
+        <p style="font-size:15px; font-weight:500; margin-bottom:10px;">${a.title}</p>
+        <div style="font-size:13px; color:var(--primary);">❤️ 공감 ${a.likes} · 💬 댓글 ${a.comments.length}</div>
+      </div>
+    `).join("");
+  }
+  async function submitQuickAnon() {
+    const input = document.getElementById("anon-quick-input");
+    const text = input.value.trim();
+    if (!text) return;
+    const newItem = {
+      id: Date.now(), type: "anon", category: "익명", title: text, content: text,
+      author: "익명의 학우", date: new Date().toISOString().slice(0, 10), likes: 0, extra: "", comments: []
+    };
+    allData.unshift(newItem);
+    input.value = "";
+    renderAnon();
+    await syncToSheet({ action: "create", item: newItem });
+  }
+
+  // 5. 마이페이지 렌더링
+  function switchMyTab(tab, btn) {
+    myTab = tab;
+    document.querySelectorAll("#page-mypage .tab-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    renderMypage();
+  }
+  function renderMypage() {
+    const written = allData.filter(d => d.author === CURRENT_USER);
+    const scrappedList = allData.filter(d => scraps.includes(d.id));
+    document.getElementById("my-post-count").textContent = written.length;
+    document.getElementById("my-scrap-count").textContent = scrappedList.length;
+
+    const target = myTab === "written" ? written : scrappedList;
+    document.getElementById("mypage-list").innerHTML = target.length ? target.map(item => `
+      <div class="list-row" onclick="openDetail(${item.id})">
+        <div><span class="badge">${item.category}</span><strong class="row-title">${item.title}</strong></div>
+        <span style="font-size:12px; color:var(--muted);">${item.date}</span>
+      </div>
+    `).join("") : "<p style='color:var(--muted); text-align:center; padding:20px;'>내역이 없습니다.</p>";
+  }
+
+  // 통합 검색
+  function handleSearch() {
+    const kw = document.getElementById("globalSearchInput").value.trim().toLowerCase();
+    if (!kw) return;
+    navigate("search");
+    const matched = allData.filter(d => d.title.toLowerCase().includes(kw) || d.content.toLowerCase().includes(kw));
+    document.getElementById("search-result-title").textContent = `'${kw}' 검색 결과 (${matched.length}건)`;
+    document.getElementById("search-result-list").innerHTML = matched.length ? matched.map(m => `
+      <div class="list-row" onclick="openDetail(${m.id})">
+        <div><span class="badge">${m.category}</span><strong class="row-title">${m.title}</strong></div>
+        <span style="font-size:12px; color:var(--muted);">${m.date}</span>
+      </div>
+    `).join("") : "<p style='color:var(--muted); padding:20px; text-align:center;'>일치하는 결과가 없습니다.</p>";
+  }
+
+  // 글쓰기 / 수정 모달 열기
+  function openEditorModal(type, existingItem = null) {
+    document.getElementById("edit-type").value = type;
+    document.getElementById("edit-id").value = existingItem ? existingItem.id : "";
+    const catSelect = document.getElementById("edit-category");
+    const extraGroup = document.getElementById("edit-extra-group");
+
+    if (type === "board") {
+      document.getElementById("editor-modal-title").textContent = existingItem ? "게시글 수정" : "새 게시글 작성";
+      catSelect.innerHTML = `<option value="자유">자유</option><option value="질문">질문</option><option value="정보공유">정보공유</option>`;
+      extraGroup.style.display = "none";
+    } else if (type === "study") {
+      document.getElementById("editor-modal-title").textContent = "스터디/팀원 모집 공고 작성";
+      catSelect.innerHTML = `<option value="코딩/개발">코딩/개발</option><option value="어학/자격증">어학/자격증</option><option value="공모전">공모전</option>`;
+      extraGroup.style.display = "block";
+      document.getElementById("edit-extra-label").textContent = "모집 현황 및 일정";
+      document.getElementById("edit-extra").placeholder = "예: 모집중 · 매주 목요일 18:00 대면";
+    } else if (type === "food") {
+      document.getElementById("editor-modal-title").textContent = "캠퍼스 맛집/카페 제보";
+      catSelect.innerHTML = `<option value="정문/후문맛집">정문/후문맛집</option><option value="가성비">가성비</option><option value="카공추천">카공추천</option>`;
+      extraGroup.style.display = "block";
+      document.getElementById("edit-extra-label").textContent = "별점 및 위치";
+      document.getElementById("edit-extra").placeholder = "예: ⭐ 4.8 / 정문 도보 3분";
+    }
+
+    document.getElementById("edit-title").value = existingItem ? existingItem.title : "";
+    document.getElementById("edit-content").value = existingItem ? existingItem.content : "";
+    document.getElementById("edit-extra").value = existingItem ? existingItem.extra : "";
+    if (existingItem) catSelect.value = existingItem.category;
+
+    document.getElementById("editor-modal").classList.add("open");
+  }
+
+  // 글 저장 (CREATE & UPDATE)
+  async function saveItem() {
+    const id = document.getElementById("edit-id").value;
+    const type = document.getElementById("edit-type").value;
+    const category = document.getElementById("edit-category").value;
+    const title = document.getElementById("edit-title").value.trim();
+    const content = document.getElementById("edit-content").value.trim();
+    const extra = document.getElementById("edit-extra").value.trim();
+
+    if (!title || !content) return alert("제목과 내용을 입력해주세요.");
+
+    if (id) {
+      const target = allData.find(d => String(d.id) === String(id));
+      if (target) {
+        target.category = category; target.title = title; target.content = content; target.extra = extra;
+        closeModal("editor-modal");
+        renderAll();
+        await syncToSheet({ action: "update", item: target });
+      }
+    } else {
+      const newItem = {
+        id: Date.now(), type, category, title, content,
+        author: CURRENT_USER, date: new Date().toISOString().slice(0, 10),
+        likes: 0, extra, comments: []
+      };
+      allData.unshift(newItem);
+      closeModal("editor-modal");
+      renderAll();
+      await syncToSheet({ action: "create", item: newItem });
+    }
+  }
+
+  // 상세 보기 모달
+  function openDetail(id) {
+    const item = allData.find(d => String(d.id) === String(id));
+    if (!item) return;
+    currentDetailId = item.id;
+
+    document.getElementById("detail-badge").textContent = item.category;
+    document.getElementById("detail-title").textContent = item.title;
+    document.getElementById("detail-meta").textContent = `${item.author} · ${item.date}`;
+    document.getElementById("detail-content").textContent = item.content;
+    document.getElementById("detail-likes").textContent = item.likes;
+
+    const extraBox = document.getElementById("detail-extra-box");
+    if (item.extra) {
+      extraBox.style.display = "block";
+      extraBox.textContent = "📌 " + item.extra;
+    } else {
+      extraBox.style.display = "none";
+    }
+
+    document.getElementById("detail-scrap-btn").textContent = scraps.includes(item.id) ? "⭐ 스크랩됨" : "☆ 스크랩";
+    renderComments(item);
+    document.getElementById("detail-modal").classList.add("open");
+  }
+
+  function renderComments(item) {
+    document.getElementById("detail-comment-count").textContent = item.comments.length;
+    document.getElementById("detail-comments").innerHTML = item.comments.length ? item.comments.map(c => `
+      <div style="padding:8px 10px; background:var(--bg); border-radius:8px; margin-bottom:6px; font-size:13px;">
+        <strong>${c.author}</strong>: ${c.text}
+      </div>
+    `).join("") : "<div style='font-size:12px; color:var(--muted);'>첫 댓글을 남겨보세요!</div>";
+  }
+
+  async function addComment() {
+    const input = document.getElementById("comment-input");
+    const text = input.value.trim();
+    if (!text) return;
+    const item = allData.find(d => d.id === currentDetailId);
+    if (!item) return;
+
+    item.comments.push({ author: CURRENT_USER, text });
+    input.value = "";
+    renderComments(item);
+    renderAll();
+    await syncToSheet({ action: "update", item });
+  }
+
+  async function toggleLike() {
+    const item = allData.find(d => d.id === currentDetailId);
+    if (!item) return;
+    item.likes += 1;
+    document.getElementById("detail-likes").textContent = item.likes;
+    renderAll();
+    await syncToSheet({ action: "update", item });
+  }
+
+  function toggleScrap() {
+    if (scraps.includes(currentDetailId)) {
+      scraps = scraps.filter(id => id !== currentDetailId);
+    } else {
+      scraps.push(currentDetailId);
+    }
+    localStorage.setItem("campus_scraps", JSON.stringify(scraps));
+    document.getElementById("detail-scrap-btn").textContent = scraps.includes(currentDetailId) ? "⭐ 스크랩됨" : "☆ 스크랩";
+    renderMypage();
+  }
+
+  function openEditCurrent() {
+    const item = allData.find(d => d.id === currentDetailId);
+    if (!item) return;
+    closeModal("detail-modal");
+    openEditorModal(item.type, item);
+  }
+
+  async function deleteCurrent() {
+    if (!confirm("정말 삭제하시겠습니까?")) return;
+    const targetId = currentDetailId;
+    allData = allData.filter(d => d.id !== targetId);
+    closeModal("detail-modal");
+    renderAll();
+    await syncToSheet({ action: "delete", id: targetId });
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove("open");
+  }
+</script>
+</body>
+</html>
