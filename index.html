@@ -148,7 +148,9 @@
       border-radius: 14px;
       padding: 20px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+      min-width: 0;
     }
+    .card h3, .card p { word-break: break-word; overflow-wrap: anywhere; }
     .card.clickable { cursor: pointer; transition: transform 0.15s, border-color 0.15s; }
     .card.clickable:hover { transform: translateY(-2px); border-color: #93c5fd; }
     .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 10px; }
@@ -582,7 +584,7 @@
   let myCommentIds = safeJSONParse(localStorage.getItem("campus_my_comments"), []).map(String);
   let deletedSeeds = safeJSONParse(localStorage.getItem("campus_deleted_seeds"), []).map(String);
 
-  // 앱 상태
+  // 앱 상태 및 직렬화 큐
   let allData = [];
   let sheetIds = new Set(); // 실제 구글 시트에 저장된 글 ID 목록
   let currentDetailId = null;
@@ -591,6 +593,8 @@
   let foodFilter = "전체";
   let myTab = "written";
   let lastSearchKeyword = "";
+  let loadingCount = 0;
+  let syncQueue = Promise.resolve();
 
   // 초기 기본 샘플 데이터
   const SEED_DATA = [
@@ -645,16 +649,28 @@
     return str.slice(0, 10);
   }
 
+  function getBadgeClass(type) {
+    if (type === "study") return "badge green";
+    if (type === "food") return "badge orange";
+    if (type === "anon") return "badge purple";
+    return "badge";
+  }
+
   function canManageItem(item) {
+    if (item.type === "anon") return myPostIds.includes(String(item.id));
     return item.author === currentUser || myPostIds.includes(String(item.id));
   }
 
   function canDeleteComment(comment) {
-    return comment.author === currentUser || (comment.id && myCommentIds.includes(String(comment.id)));
+    if (comment.author === "익명의 학우") {
+      return Boolean(comment.id && myCommentIds.includes(String(comment.id)));
+    }
+    return comment.author === currentUser || Boolean(comment.id && myCommentIds.includes(String(comment.id)));
   }
 
   function showLoader(show) {
-    document.getElementById("loader").style.display = show ? "block" : "none";
+    loadingCount = Math.max(0, loadingCount + (show ? 1 : -1));
+    document.getElementById("loader").style.display = loadingCount > 0 ? "block" : "none";
   }
 
   let toastTimer = null;
@@ -664,6 +680,13 @@
     el.classList.add("show");
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => el.classList.remove("show"), 2400);
+  }
+
+  // 시트 쓰기 요청을 순서대로 실행해 중복 생성/충돌 방지
+  function enqueueSync(task) {
+    const run = syncQueue.then(task, task);
+    syncQueue = run.catch(() => {});
+    return run;
   }
 
   // ESC 키로 모달 닫기
@@ -771,16 +794,18 @@
     }
   }
 
-  // 시트에 이미 있으면 update, 샘플 글 등 아직 시트에 없으면 create 자동 선택
-  async function persistItem(item) {
-    const idStr = String(item.id);
-    if (sheetIds.has(idStr)) {
-      return await syncToSheet({ action: "update", item });
-    } else {
-      const ok = await syncToSheet({ action: "create", item });
-      if (ok) sheetIds.add(idStr);
-      return ok;
-    }
+  // 시트에 이미 있으면 update, 샘플 글 등 아직 시트에 없으면 create 자동 선택 (직렬화 큐)
+  function persistItem(item) {
+    return enqueueSync(async () => {
+      const idStr = String(item.id);
+      if (sheetIds.has(idStr)) {
+        return await syncToSheet({ action: "update", item });
+      } else {
+        const ok = await syncToSheet({ action: "create", item });
+        if (ok) sheetIds.add(idStr);
+        return ok;
+      }
+    });
   }
 
   // 메뉴 전환
@@ -917,7 +942,7 @@
       ? list.map((s) => `
           <div class="card clickable" data-id="${escapeHTML(s.id)}" onclick="openDetail(this.dataset.id)">
             <div style="margin-bottom:8px;"><span class="badge green">${escapeHTML(s.category)}</span></div>
-            <h3 style="font-size:16px; margin-bottom:8px; word-break:break-word;">${escapeHTML(s.title)}</h3>
+            <h3 style="font-size:16px; margin-bottom:8px;">${escapeHTML(s.title)}</h3>
             <p style="font-size:13px; color:var(--muted); margin-bottom:12px;">${escapeHTML(s.content.length > 65 ? s.content.slice(0, 65) + "..." : s.content)}</p>
             <div style="font-size:12px; font-weight:600; color:var(--primary);">${escapeHTML(s.extra || "모집중")}</div>
             <div style="font-size:11px; color:var(--muted); margin-top:6px;">${escapeHTML(s.author)} · 댓글/지원 ${s.comments.length}</div>
@@ -943,7 +968,7 @@
               <span class="badge orange">#${escapeHTML(f.category)}</span>
               <span style="font-size:12px; font-weight:700; color:var(--text);">${escapeHTML(f.extra)}</span>
             </div>
-            <h3 style="font-size:16px; margin-bottom:8px; word-break:break-word;">${escapeHTML(f.title)}</h3>
+            <h3 style="font-size:16px; margin-bottom:8px;">${escapeHTML(f.title)}</h3>
             <p style="font-size:13px; color:var(--muted); margin-bottom:10px;">${escapeHTML(f.content.length > 75 ? f.content.slice(0, 75) + "..." : f.content)}</p>
             <div style="font-size:12px; color:var(--muted);">👍 ${f.likes} · 💬 ${f.comments.length}</div>
           </div>
@@ -960,7 +985,7 @@
             <div style="font-size:12px; color:var(--muted); margin-bottom:6px;">
               <span class="badge purple">${escapeHTML(a.category || "익명")}</span> 익명의 학우 · ${escapeHTML(a.date)}
             </div>
-            <p style="font-size:15px; font-weight:600; margin-bottom:6px; word-break:break-word;">${escapeHTML(a.title)}</p>
+            <p style="font-size:15px; font-weight:600; margin-bottom:6px;">${escapeHTML(a.title)}</p>
             ${a.content && a.content !== a.title ? `<p style="font-size:13px; color:var(--muted); margin-bottom:10px;">${escapeHTML(a.content.length > 100 ? a.content.slice(0, 100) + "..." : a.content)}</p>` : ""}
             <div style="font-size:13px; color:var(--primary);">👍 공감 ${a.likes} · 💬 댓글 ${a.comments.length}</div>
           </div>
@@ -1008,6 +1033,7 @@
     const name = input.value.trim();
     if (!name) return showToast("변경할 닉네임을 입력해 주세요.");
     if (name.length > 15) return showToast("닉네임은 15자 이내로 입력해 주세요.");
+    if (name === "익명의 학우" || name === "익명") return showToast("사용할 수 없는 닉네임입니다.");
 
     currentUser = name;
     localStorage.setItem("campus_user", currentUser);
@@ -1039,7 +1065,7 @@
       ? target.map((item) => `
           <div class="list-row" data-id="${escapeHTML(item.id)}" onclick="openDetail(this.dataset.id)">
             <div class="row-main">
-              <span class="badge">${escapeHTML(item.category)}</span>
+              <span class="${getBadgeClass(item.type)}">${escapeHTML(item.category)}</span>
               <strong class="row-title">${escapeHTML(item.title)}</strong>
             </div>
             <span style="font-size:12px; color:var(--muted); white-space:nowrap;">${escapeHTML(item.date)}</span>
@@ -1054,7 +1080,6 @@
     if (!kw) return showToast("검색어를 입력해 주세요.");
     lastSearchKeyword = kw;
     navigate("search");
-    renderSearch(kw);
   }
 
   function renderSearch(kw) {
@@ -1074,7 +1099,7 @@
       ? matched.map((m) => `
           <div class="list-row" data-id="${escapeHTML(m.id)}" onclick="openDetail(this.dataset.id)">
             <div class="row-main">
-              <span class="badge">${escapeHTML(m.category)}</span>
+              <span class="${getBadgeClass(m.type)}">${escapeHTML(m.category)}</span>
               <strong class="row-title">${escapeHTML(m.title)}</strong>
               <div class="row-meta">${escapeHTML(m.author)} · ${escapeHTML(m.date)}</div>
             </div>
@@ -1186,11 +1211,28 @@
     if (!item) return;
     currentDetailId = String(item.id);
 
-    document.getElementById("detail-badge").textContent = item.category;
+    const badgeEl = document.getElementById("detail-badge");
+    badgeEl.className = getBadgeClass(item.type);
+    badgeEl.textContent = item.category;
+
     document.getElementById("detail-title").textContent = item.title;
     document.getElementById("detail-meta").textContent = `${item.author} · ${item.date}`;
-    document.getElementById("detail-content").textContent = item.content;
     document.getElementById("comment-input").value = "";
+
+    // 이전 모달 작업으로 버튼이 잠겨있지 않도록 초기화
+    document.getElementById("detail-like-btn").disabled = false;
+    document.getElementById("detail-delete-btn").disabled = false;
+    document.getElementById("comment-submit-btn").disabled = false;
+
+    // 익명 한 줄 글일 경우 제목과 동일한 본문 중복 출력 방지
+    const contentEl = document.getElementById("detail-content");
+    if (item.type === "anon" && item.content === item.title) {
+      contentEl.style.display = "none";
+      contentEl.textContent = "";
+    } else {
+      contentEl.style.display = "block";
+      contentEl.textContent = item.content;
+    }
 
     const extraBox = document.getElementById("detail-extra-box");
     if (item.extra) {
@@ -1260,7 +1302,9 @@
     const item = allData.find((d) => String(d.id) === String(currentDetailId));
     if (!item) return;
 
+    const idStr = String(item.id);
     btn.disabled = true;
+
     const commentId = "c_" + Date.now();
     const commentAuthor = item.type === "anon" ? "익명의 학우" : currentUser;
     item.comments.push({ id: commentId, author: commentAuthor, text });
@@ -1273,7 +1317,7 @@
     renderAll();
 
     const ok = await persistItem(item);
-    btn.disabled = false;
+    if (currentDetailId === idStr) btn.disabled = false;
     if (ok) showToast("댓글이 등록되었습니다.");
   }
 
@@ -1320,7 +1364,7 @@
     renderAll();
 
     await persistItem(item);
-    btn.disabled = false;
+    if (currentDetailId === idStr) btn.disabled = false;
   }
 
   function toggleScrap() {
@@ -1345,14 +1389,10 @@
   }
 
   async function deleteCurrent() {
-    const delBtn = document.getElementById("detail-delete-btn");
-    if (delBtn.disabled) return;
-
     const item = allData.find((d) => String(d.id) === String(currentDetailId));
     if (!item || !canManageItem(item)) return;
     if (!confirm("정말 삭제하시겠습니까?")) return;
 
-    delBtn.disabled = true;
     const targetId = String(currentDetailId);
 
     allData = allData.filter((d) => String(d.id) !== targetId);
@@ -1373,16 +1413,18 @@
     closeModal("detail-modal");
     renderAll();
 
-    if (sheetIds.has(targetId)) {
-      const ok = await syncToSheet({ action: "delete", id: targetId });
-      if (ok) {
-        sheetIds.delete(targetId);
+    // 대기열을 통해 앞선 create가 끝난 뒤 안전하게 delete 실행
+    await enqueueSync(async () => {
+      if (sheetIds.has(targetId)) {
+        const ok = await syncToSheet({ action: "delete", id: targetId });
+        if (ok) {
+          sheetIds.delete(targetId);
+          showToast("게시글이 삭제되었습니다.");
+        }
+      } else {
         showToast("게시글이 삭제되었습니다.");
       }
-    } else {
-      showToast("게시글이 삭제되었습니다.");
-    }
-    delBtn.disabled = false;
+    });
   }
 
   function closeModal(id) {
