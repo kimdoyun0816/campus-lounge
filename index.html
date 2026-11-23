@@ -168,7 +168,7 @@
     .list-row:last-child { border-bottom: none; }
     .list-row:hover .row-title { color: var(--primary); }
     .row-main { min-width: 0; flex: 1; }
-    .row-title { font-size: 14px; word-break: break-word; }
+    .row-title { font-size: 14px; word-break: break-word; overflow-wrap: anywhere; }
     .row-meta { font-size: 12px; color: var(--muted); margin-top: 4px; }
     .empty-msg { color: var(--muted); text-align: center; padding: 28px 12px; font-size: 14px; }
 
@@ -208,7 +208,7 @@
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;
-      transition: opacity 0.15s;
+      transition: opacity 0.15s, background 0.15s;
     }
     .btn:disabled { opacity: 0.55; cursor: not-allowed; }
     .btn-primary { background: var(--primary); color: #fff; }
@@ -216,6 +216,32 @@
     .btn-outline { background: #fff; border: 1px solid var(--border); color: var(--text); }
     .btn-outline:hover:not(:disabled) { background: var(--bg); }
     .btn-danger { background: var(--danger); color: #fff; }
+
+    /* Comment item */
+    .comment-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 10px;
+      background: var(--bg);
+      border-radius: 8px;
+      margin-bottom: 6px;
+      font-size: 13px;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+    .comment-del-btn {
+      background: none;
+      border: none;
+      color: var(--danger);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      padding: 2px 4px;
+    }
+    .comment-del-btn:hover { text-decoration: underline; }
 
     /* Forms & Modal */
     .modal-backdrop {
@@ -309,7 +335,7 @@
     </nav>
     <div class="header-actions">
       <div class="search-box">
-        <input type="text" id="globalSearchInput" placeholder="통합 검색..." onkeyup="if(event.key==='Enter') handleSearch()" />
+        <input type="text" id="globalSearchInput" placeholder="통합 검색..." onkeydown="if(event.key==='Enter' && !event.isComposing){ event.preventDefault(); handleSearch(); }" />
         <button onclick="handleSearch()">검색</button>
       </div>
       <button class="sync-btn" onclick="fetchData(true)" title="구글 시트 최신 데이터 불러오기">🔄 동기화</button>
@@ -378,10 +404,10 @@
   <section id="page-board" class="page-section">
     <div class="toolbar">
       <div class="tabs" id="board-tabs">
-        <button class="tab-btn active" onclick="filterBoard('전체', this)">전체</button>
-        <button class="tab-btn" onclick="filterBoard('자유', this)">자유</button>
-        <button class="tab-btn" onclick="filterBoard('질문', this)">질문</button>
-        <button class="tab-btn" onclick="filterBoard('정보공유', this)">정보공유</button>
+        <button class="tab-btn active" data-cat="전체" onclick="filterBoard('전체', this)">전체</button>
+        <button class="tab-btn" data-cat="자유" onclick="filterBoard('자유', this)">자유</button>
+        <button class="tab-btn" data-cat="질문" onclick="filterBoard('질문', this)">질문</button>
+        <button class="tab-btn" data-cat="정보공유" onclick="filterBoard('정보공유', this)">정보공유</button>
       </div>
       <div style="display:flex; gap:8px;">
         <select id="board-sort" onchange="renderBoard()" style="padding:7px 10px; border-radius:8px; border:1px solid var(--border); font-size:13px;">
@@ -398,10 +424,10 @@
   <section id="page-study" class="page-section">
     <div class="toolbar">
       <div class="tabs" id="study-tabs">
-        <button class="tab-btn active" onclick="filterStudy('전체', this)">전체</button>
-        <button class="tab-btn" onclick="filterStudy('코딩/개발', this)">코딩/개발</button>
-        <button class="tab-btn" onclick="filterStudy('어학/자격증', this)">어학/자격증</button>
-        <button class="tab-btn" onclick="filterStudy('공모전', this)">공모전</button>
+        <button class="tab-btn active" data-cat="전체" onclick="filterStudy('전체', this)">전체</button>
+        <button class="tab-btn" data-cat="코딩/개발" onclick="filterStudy('코딩/개발', this)">코딩/개발</button>
+        <button class="tab-btn" data-cat="어학/자격증" onclick="filterStudy('어학/자격증', this)">어학/자격증</button>
+        <button class="tab-btn" data-cat="공모전" onclick="filterStudy('공모전', this)">공모전</button>
       </div>
       <button class="btn btn-primary" onclick="openEditorModal('study')">+ 모집글 작성</button>
     </div>
@@ -412,10 +438,10 @@
   <section id="page-food" class="page-section">
     <div class="toolbar">
       <div class="tabs" id="food-tabs">
-        <button class="tab-btn active" onclick="filterFood('전체', this)">전체</button>
-        <button class="tab-btn" onclick="filterFood('정문/후문맛집', this)">#정문/후문맛집</button>
-        <button class="tab-btn" onclick="filterFood('가성비', this)">#가성비</button>
-        <button class="tab-btn" onclick="filterFood('카공추천', this)">#카공추천</button>
+        <button class="tab-btn active" data-cat="전체" onclick="filterFood('전체', this)">전체</button>
+        <button class="tab-btn" data-cat="정문/후문맛집" onclick="filterFood('정문/후문맛집', this)">#정문/후문맛집</button>
+        <button class="tab-btn" data-cat="가성비" onclick="filterFood('가성비', this)">#가성비</button>
+        <button class="tab-btn" data-cat="카공추천" onclick="filterFood('카공추천', this)">#카공추천</button>
       </div>
       <button class="btn btn-primary" onclick="openEditorModal('food')">+ 맛집 제보하기</button>
     </div>
@@ -430,7 +456,7 @@
         <button class="btn btn-outline" style="padding:5px 10px; font-size:12px;" onclick="openEditorModal('anon')">길게 쓰기</button>
       </div>
       <div style="display:flex; gap:10px;">
-        <input type="text" id="anon-quick-input" placeholder="학업, 연애, 일상 고민을 익명으로 자유롭게 남겨보세요..." style="flex:1; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px;" onkeyup="if(event.key==='Enter') submitQuickAnon()" />
+        <input type="text" id="anon-quick-input" placeholder="학업, 연애, 일상 고민을 익명으로 자유롭게 남겨보세요..." style="flex:1; padding:10px 12px; border:1px solid var(--border); border-radius:8px; font-size:14px;" onkeydown="if(event.key==='Enter' && !event.isComposing){ event.preventDefault(); submitQuickAnon(); }" />
         <button class="btn btn-primary" id="anon-quick-btn" onclick="submitQuickAnon()">등록</button>
       </div>
     </div>
@@ -444,7 +470,7 @@
         <h2 style="font-size:18px; margin-bottom:4px;" id="profile-name">도윤(나)</h2>
         <p style="font-size:13px; color:var(--muted); margin-bottom:10px;">Google Sheets 실시간 DB 연동 계정</p>
         <div style="display:flex; gap:6px; align-items:center;">
-          <input type="text" id="nickname-input" placeholder="새 닉네임 입력" style="padding:6px 10px; border:1px solid var(--border); border-radius:8px; font-size:13px; width:150px;" />
+          <input type="text" id="nickname-input" placeholder="새 닉네임 입력" style="padding:6px 10px; border:1px solid var(--border); border-radius:8px; font-size:13px; width:150px;" onkeydown="if(event.key==='Enter' && !event.isComposing){ event.preventDefault(); updateNickname(); }" />
           <button class="btn btn-outline" style="padding:6px 12px;" onclick="updateNickname()">닉네임 변경</button>
         </div>
       </div>
@@ -516,19 +542,19 @@
       <span class="badge" id="detail-badge">카테고리</span>
       <button class="btn btn-outline" onclick="closeModal('detail-modal')">✕</button>
     </div>
-    <h2 id="detail-title" style="font-size:20px; margin-bottom:8px; word-break:break-word;">제목</h2>
+    <h2 id="detail-title" style="font-size:20px; margin-bottom:8px; word-break:break-word; overflow-wrap:anywhere;">제목</h2>
     <div style="font-size:12px; color:var(--muted); margin-bottom:16px;" id="detail-meta">작성자 · 날짜</div>
     <div id="detail-extra-box" style="background:var(--primary-light); padding:10px 14px; border-radius:8px; font-size:13px; margin-bottom:14px; display:none;"></div>
-    <p id="detail-content" style="font-size:14px; white-space:pre-line; margin-bottom:20px; min-height:60px; word-break:break-word;"></p>
+    <p id="detail-content" style="font-size:14px; white-space:pre-line; margin-bottom:20px; min-height:60px; word-break:break-word; overflow-wrap:anywhere;"></p>
 
     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; padding-bottom:16px; border-bottom:1px solid var(--border); margin-bottom:16px;">
       <div style="display:flex; gap:8px;">
-        <button class="btn btn-outline" onclick="toggleLike()">👍 공감 (<span id="detail-likes">0</span>)</button>
+        <button class="btn btn-outline" id="detail-like-btn" onclick="toggleLike()">👍 공감 (<span id="detail-likes">0</span>)</button>
         <button class="btn btn-outline" id="detail-scrap-btn" onclick="toggleScrap()">☆ 스크랩</button>
       </div>
       <div id="detail-owner-btns" style="display:flex; gap:6px;">
         <button class="btn btn-outline" onclick="openEditCurrent()">수정</button>
-        <button class="btn btn-danger" onclick="deleteCurrent()">삭제</button>
+        <button class="btn btn-danger" id="detail-delete-btn" onclick="deleteCurrent()">삭제</button>
       </div>
     </div>
 
@@ -537,7 +563,7 @@
       <h4 style="font-size:14px; margin-bottom:10px;" id="detail-comment-heading">댓글 (<span id="detail-comment-count">0</span>)</h4>
       <div id="detail-comments" style="max-height:200px; overflow-y:auto; margin-bottom:12px;"></div>
       <div style="display:flex; gap:8px;">
-        <input type="text" id="comment-input" placeholder="댓글을 입력하세요..." style="flex:1; padding:8px 12px; border:1px solid var(--border); border-radius:8px; font-size:13px;" onkeyup="if(event.key==='Enter') addComment()" />
+        <input type="text" id="comment-input" placeholder="댓글을 입력하세요..." style="flex:1; padding:8px 12px; border:1px solid var(--border); border-radius:8px; font-size:13px;" onkeydown="if(event.key==='Enter' && !event.isComposing){ event.preventDefault(); addComment(); }" />
         <button class="btn btn-primary" id="comment-submit-btn" onclick="addComment()">등록</button>
       </div>
     </div>
@@ -548,7 +574,15 @@
   // 배포된 Google Apps Script 웹 앱 URL
   const API_URL = "https://script.google.com/macros/s/AKfycbyzLkBKdgntj8XAxsLDY3zYdwgK-aGJxVi-sj4LJQYIRqe0F3RyTTMScEv93xdWr25u/exec";
 
+  // 브라우저 개인 설정(localStorage)
   let currentUser = localStorage.getItem("campus_user") || "도윤(나)";
+  let scraps = safeJSONParse(localStorage.getItem("campus_scraps"), []).map(String);
+  let likedPosts = safeJSONParse(localStorage.getItem("campus_likes"), []).map(String);
+  let myPostIds = safeJSONParse(localStorage.getItem("campus_my_posts"), ["101", "201"]).map(String);
+  let myCommentIds = safeJSONParse(localStorage.getItem("campus_my_comments"), []).map(String);
+  let deletedSeeds = safeJSONParse(localStorage.getItem("campus_deleted_seeds"), []).map(String);
+
+  // 앱 상태
   let allData = [];
   let sheetIds = new Set(); // 실제 구글 시트에 저장된 글 ID 목록
   let currentDetailId = null;
@@ -556,14 +590,13 @@
   let studyFilter = "전체";
   let foodFilter = "전체";
   let myTab = "written";
-  let scraps = safeJSONParse(localStorage.getItem("campus_scraps"), []).map(String);
-  let deletedSeeds = safeJSONParse(localStorage.getItem("campus_deleted_seeds"), []).map(String);
+  let lastSearchKeyword = "";
 
-  // 초기 기본 샘플 데이터 (시트가 비어있어도 화면이 풍성하게 보이도록 구성)
+  // 초기 기본 샘플 데이터
   const SEED_DATA = [
-    { id: "101", type: "board", category: "정보공유", title: "웹프로그래밍 기말과제 구글 시트 DB 연동 팁 공유", content: "Apps Script로 doGet, doPost만 짜면 GitHub Pages에서도 실시간 DB처럼 쓸 수 있습니다!", author: "도윤(나)", date: "2026-11-23", likes: 15, extra: "", comments: [{ author: "컴교25", text: "오 진짜 유용하네요 감사합니다!" }] },
+    { id: "101", type: "board", category: "정보공유", title: "웹프로그래밍 기말과제 구글 시트 DB 연동 팁 공유", content: "Apps Script로 doGet, doPost만 짜면 GitHub Pages에서도 실시간 DB처럼 쓸 수 있습니다!", author: "도윤(나)", date: "2026-11-23", likes: 15, extra: "", comments: [{ id: "c1", author: "컴교25", text: "오 진짜 유용하네요 감사합니다!" }] },
     { id: "102", type: "board", category: "자유", title: "오늘 학생회관 돈까스 퀄리티 대박이네요", content: "치즈가 쭉 늘어나서 놀랐습니다. 점심시간 12시 전에 가는 거 추천!", author: "학식러버", date: "2026-11-23", likes: 9, extra: "", comments: [] },
-    { id: "103", type: "board", category: "질문", title: "중도 3층 열람실 콘센트 자리 몇 시쯤 차나요?", content: "오후 2시 공강 때 가려는데 자리 있을까요?", author: "시험기간", date: "2026-11-22", likes: 4, extra: "", comments: [{ author: "도서관지박령", text: "2시면 창가 쪽은 다 차고 안쪽은 여유 있어요" }] },
+    { id: "103", type: "board", category: "질문", title: "중도 3층 열람실 콘센트 자리 몇 시쯤 차나요?", content: "오후 2시 공강 때 가려는데 자리 있을까요?", author: "시험기간", date: "2026-11-22", likes: 4, extra: "", comments: [{ id: "c2", author: "도서관지박령", text: "2시면 창가 쪽은 다 차고 안쪽은 여유 있어요" }] },
     { id: "201", type: "study", category: "코딩/개발", title: "프론트엔드 포트폴리오 제작 스터디원 모집 (3/4명)", content: "HTML, CSS, JS로 각자 웹서비스 하나씩 완성해서 깃허브 배포까지 같이 하실 분 구합니다.", author: "도윤(나)", date: "2026-11-23", likes: 7, extra: "모집중 · 매주 수요일 18:00 대면", comments: [] },
     { id: "202", type: "study", category: "어학/자격증", title: "겨울방학 토익 850+ 목표 아침 인증 스터디", content: "매일 오전 9시 단어 시험 인증하고 주 1회 모의고사 풀이 진행합니다.", author: "영문과24", date: "2026-11-21", likes: 5, extra: "모집중 · 온라인(Zoom)", comments: [] },
     { id: "301", type: "food", category: "정문/후문맛집", title: "정문 앞 할매국밥 (수육국밥 8,000원)", content: "양 진짜 많고 깍두기가 예술입니다. 공강 때 든든하게 먹기 최고!", author: "국밥부장관", date: "2026-11-20", likes: 12, extra: "⭐ 4.8 / 정문 도보 3분", comments: [] },
@@ -571,7 +604,7 @@
     { id: "401", type: "anon", category: "익명", title: "기말과제 시즌 시작되니까 밤낮이 다 바뀌었네요 ㅠㅠ", content: "다들 기말 프로젝트 화이팅합시다... 카페인으로 버티는 중", author: "익명의 학우", date: "2026-11-23", likes: 18, extra: "", comments: [] }
   ];
 
-  // 유틸리티 함수들
+  // 유틸리티 함수
   function safeJSONParse(str, fallback) {
     try {
       const parsed = JSON.parse(str);
@@ -610,6 +643,14 @@
       return `${yyyy}-${mm}-${dd}`;
     }
     return str.slice(0, 10);
+  }
+
+  function canManageItem(item) {
+    return item.author === currentUser || myPostIds.includes(String(item.id));
+  }
+
+  function canDeleteComment(comment) {
+    return comment.author === currentUser || (comment.id && myCommentIds.includes(String(comment.id)));
   }
 
   function showLoader(show) {
@@ -652,11 +693,10 @@
         sheetIds = new Set();
 
         for (const raw of json.data) {
-          // 헤더 공백 제거 대응
           const row = {};
           Object.keys(raw).forEach((k) => { row[k.trim()] = raw[k]; });
 
-          if (!row.id && !row.title) continue; // 빈 행 무시
+          if (!row.id && !row.title) continue;
 
           const idStr = String(row.id || Date.now());
           sheetIds.add(idStr);
@@ -676,16 +716,15 @@
             content: String(row.content || ""),
             author: String(row.author || "익명"),
             date: formatDate(row.date),
-            likes: Number(row.likes) || 0,
+            likes: Math.max(0, Number(row.likes) || 0),
             extra: String(row.extra || ""),
             comments: Array.isArray(commentsArr) ? commentsArr : []
           });
         }
 
-        // 시트 데이터(최신순) + 시트에 아직 없는 기본 샘플 데이터 병합
         const remainingSeeds = SEED_DATA
           .filter((s) => !sheetIds.has(String(s.id)) && !deletedSeeds.includes(String(s.id)))
-          .map((s) => ({ ...s, id: String(s.id), comments: [...s.comments] }));
+          .map((s) => ({ ...s, id: String(s.id), comments: s.comments.map((c) => ({ ...c })) }));
 
         allData = [...cleanedRows.reverse(), ...remainingSeeds];
         if (manual) showToast("최신 데이터를 불러왔습니다!");
@@ -697,7 +736,7 @@
       if (allData.length === 0) {
         allData = SEED_DATA
           .filter((s) => !deletedSeeds.includes(String(s.id)))
-          .map((s) => ({ ...s, id: String(s.id), comments: [...s.comments] }));
+          .map((s) => ({ ...s, id: String(s.id), comments: s.comments.map((c) => ({ ...c })) }));
       }
       if (manual) showToast("DB 연결에 실패했습니다. 시트 이름(db)과 배포 권한을 확인해 주세요.");
     } finally {
@@ -717,6 +756,11 @@
         redirect: "follow"
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const text = await res.text();
+      const json = safeJSONParse(text, null);
+      if (json && json.status === "error") {
+        throw new Error(json.message || "Apps Script 오류");
+      }
       return true;
     } catch (err) {
       console.error("DB 저장 오류:", err);
@@ -727,7 +771,7 @@
     }
   }
 
-  // 시트에 이미 있는 글이면 update, 샘플 글 등 아직 시트에 없으면 create로 자동 전환
+  // 시트에 이미 있으면 update, 샘플 글 등 아직 시트에 없으면 create 자동 선택
   async function persistItem(item) {
     const idStr = String(item.id);
     if (sheetIds.has(idStr)) {
@@ -758,13 +802,31 @@
     renderFood();
     renderAnon();
     renderMypage();
+    if (document.getElementById("page-search").classList.contains("active") && lastSearchKeyword) {
+      renderSearch(lastSearchKeyword);
+    }
   }
 
   function sortByLatest(list) {
     return [...list].sort((a, b) => {
-      if (b.date !== a.date) return b.date.localeCompare(a.date);
-      return Number(b.id) - Number(a.id);
+      if (b.date !== a.date) return String(b.date).localeCompare(String(a.date));
+      const numDiff = (Number(b.id) || 0) - (Number(a.id) || 0);
+      if (numDiff !== 0) return numDiff;
+      return String(b.id).localeCompare(String(a.id));
     });
+  }
+
+  function resetCategoryTab(type) {
+    if (type === "board") {
+      boardFilter = "전체";
+      document.querySelectorAll("#board-tabs .tab-btn").forEach((b) => b.classList.toggle("active", b.dataset.cat === "전체"));
+    } else if (type === "study") {
+      studyFilter = "전체";
+      document.querySelectorAll("#study-tabs .tab-btn").forEach((b) => b.classList.toggle("active", b.dataset.cat === "전체"));
+    } else if (type === "food") {
+      foodFilter = "전체";
+      document.querySelectorAll("#food-tabs .tab-btn").forEach((b) => b.classList.toggle("active", b.dataset.cat === "전체"));
+    }
   }
 
   // 0. 메인 화면 렌더링
@@ -775,7 +837,7 @@
       .slice(0, 5);
     document.getElementById("home-top-posts").innerHTML = boards.length
       ? boards.map((p, idx) => `
-          <div class="list-row" onclick="openDetail('${escapeHTML(p.id)}')">
+          <div class="list-row" data-id="${escapeHTML(p.id)}" onclick="openDetail(this.dataset.id)">
             <div class="row-main">
               <strong style="color:var(--primary); margin-right:6px;">${idx + 1}</strong>
               <span class="badge">${escapeHTML(p.category)}</span>
@@ -789,7 +851,7 @@
     const studies = sortByLatest(allData.filter((d) => d.type === "study")).slice(0, 3);
     document.getElementById("home-studies").innerHTML = studies.length
       ? studies.map((s) => `
-          <div class="list-row" onclick="openDetail('${escapeHTML(s.id)}')">
+          <div class="list-row" data-id="${escapeHTML(s.id)}" onclick="openDetail(this.dataset.id)">
             <div class="row-main">
               <span class="badge green">${escapeHTML(s.category)}</span>
               <span class="row-title">${escapeHTML(s.title)}</span>
@@ -802,7 +864,7 @@
     const foods = sortByLatest(allData.filter((d) => d.type === "food")).slice(0, 3);
     document.getElementById("home-foods").innerHTML = foods.length
       ? foods.map((f) => `
-          <div class="list-row" onclick="openDetail('${escapeHTML(f.id)}')">
+          <div class="list-row" data-id="${escapeHTML(f.id)}" onclick="openDetail(this.dataset.id)">
             <div class="row-main">
               <span class="badge orange">${escapeHTML(f.category)}</span>
               <span class="row-title">${escapeHTML(f.title)}</span>
@@ -828,7 +890,7 @@
 
     document.getElementById("board-list").innerHTML = list.length
       ? list.map((p) => `
-          <div class="list-row" onclick="openDetail('${escapeHTML(p.id)}')">
+          <div class="list-row" data-id="${escapeHTML(p.id)}" onclick="openDetail(this.dataset.id)">
             <div class="row-main">
               <span class="badge">${escapeHTML(p.category)}</span>
               <strong class="row-title">${escapeHTML(p.title)}</strong>
@@ -853,7 +915,7 @@
     const list = sortByLatest(allData.filter((d) => d.type === "study" && (studyFilter === "전체" || d.category === studyFilter)));
     document.getElementById("study-list").innerHTML = list.length
       ? list.map((s) => `
-          <div class="card clickable" onclick="openDetail('${escapeHTML(s.id)}')">
+          <div class="card clickable" data-id="${escapeHTML(s.id)}" onclick="openDetail(this.dataset.id)">
             <div style="margin-bottom:8px;"><span class="badge green">${escapeHTML(s.category)}</span></div>
             <h3 style="font-size:16px; margin-bottom:8px; word-break:break-word;">${escapeHTML(s.title)}</h3>
             <p style="font-size:13px; color:var(--muted); margin-bottom:12px;">${escapeHTML(s.content.length > 65 ? s.content.slice(0, 65) + "..." : s.content)}</p>
@@ -876,7 +938,7 @@
     const list = sortByLatest(allData.filter((d) => d.type === "food" && (foodFilter === "전체" || d.category === foodFilter)));
     document.getElementById("food-list").innerHTML = list.length
       ? list.map((f) => `
-          <div class="card clickable" onclick="openDetail('${escapeHTML(f.id)}')">
+          <div class="card clickable" data-id="${escapeHTML(f.id)}" onclick="openDetail(this.dataset.id)">
             <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px;">
               <span class="badge orange">#${escapeHTML(f.category)}</span>
               <span style="font-size:12px; font-weight:700; color:var(--text);">${escapeHTML(f.extra)}</span>
@@ -894,13 +956,13 @@
     const list = sortByLatest(allData.filter((d) => d.type === "anon"));
     document.getElementById("anon-list").innerHTML = list.length
       ? list.map((a) => `
-          <div class="card clickable" onclick="openDetail('${escapeHTML(a.id)}')">
+          <div class="card clickable" data-id="${escapeHTML(a.id)}" onclick="openDetail(this.dataset.id)">
             <div style="font-size:12px; color:var(--muted); margin-bottom:6px;">
               <span class="badge purple">${escapeHTML(a.category || "익명")}</span> 익명의 학우 · ${escapeHTML(a.date)}
             </div>
             <p style="font-size:15px; font-weight:600; margin-bottom:6px; word-break:break-word;">${escapeHTML(a.title)}</p>
-            ${a.content && a.content !== a.title ? `<p style="font-size:13px; color:var(--muted); margin-bottom:10px;">${escapeHTML(a.content.slice(0, 100))}</p>` : ""}
-            <div style="font-size:13px; color:var(--primary);">❤️ 공감 ${a.likes} · 💬 댓글 ${a.comments.length}</div>
+            ${a.content && a.content !== a.title ? `<p style="font-size:13px; color:var(--muted); margin-bottom:10px;">${escapeHTML(a.content.length > 100 ? a.content.slice(0, 100) + "..." : a.content)}</p>` : ""}
+            <div style="font-size:13px; color:var(--primary);">👍 공감 ${a.likes} · 💬 댓글 ${a.comments.length}</div>
           </div>
         `).join("")
       : `<div class="card empty-msg">아직 대나무숲에 올라온 글이 없습니다.</div>`;
@@ -909,12 +971,14 @@
   async function submitQuickAnon() {
     const input = document.getElementById("anon-quick-input");
     const btn = document.getElementById("anon-quick-btn");
+    if (btn.disabled) return;
     const text = input.value.trim();
-    if (!text) return;
+    if (!text) return showToast("내용을 입력해 주세요.");
 
     btn.disabled = true;
+    const newId = String(Date.now());
     const newItem = {
-      id: String(Date.now()),
+      id: newId,
       type: "anon",
       category: "익명",
       title: text,
@@ -925,7 +989,11 @@
       extra: "",
       comments: []
     };
+
     allData.unshift(newItem);
+    myPostIds.push(newId);
+    localStorage.setItem("campus_my_posts", JSON.stringify(myPostIds));
+
     input.value = "";
     renderAll();
 
@@ -939,6 +1007,8 @@
     const input = document.getElementById("nickname-input");
     const name = input.value.trim();
     if (!name) return showToast("변경할 닉네임을 입력해 주세요.");
+    if (name.length > 15) return showToast("닉네임은 15자 이내로 입력해 주세요.");
+
     currentUser = name;
     localStorage.setItem("campus_user", currentUser);
     document.getElementById("profile-name").textContent = currentUser;
@@ -956,8 +1026,8 @@
 
   function renderMypage() {
     document.getElementById("profile-name").textContent = currentUser;
-    const written = sortByLatest(allData.filter((d) => d.author === currentUser));
-    const commented = sortByLatest(allData.filter((d) => d.comments.some((c) => c.author === currentUser)));
+    const written = sortByLatest(allData.filter((d) => canManageItem(d)));
+    const commented = sortByLatest(allData.filter((d) => d.comments.some((c) => canDeleteComment(c))));
     const scrappedList = sortByLatest(allData.filter((d) => scraps.includes(String(d.id))));
 
     document.getElementById("my-post-count").textContent = written.length;
@@ -967,7 +1037,7 @@
     const target = myTab === "written" ? written : myTab === "commented" ? commented : scrappedList;
     document.getElementById("mypage-list").innerHTML = target.length
       ? target.map((item) => `
-          <div class="list-row" onclick="openDetail('${escapeHTML(item.id)}')">
+          <div class="list-row" data-id="${escapeHTML(item.id)}" onclick="openDetail(this.dataset.id)">
             <div class="row-main">
               <span class="badge">${escapeHTML(item.category)}</span>
               <strong class="row-title">${escapeHTML(item.title)}</strong>
@@ -980,30 +1050,35 @@
 
   // 통합 검색
   function handleSearch() {
-    const kw = document.getElementById("globalSearchInput").value.trim().toLowerCase();
+    const kw = document.getElementById("globalSearchInput").value.trim();
     if (!kw) return showToast("검색어를 입력해 주세요.");
-
+    lastSearchKeyword = kw;
     navigate("search");
+    renderSearch(kw);
+  }
+
+  function renderSearch(kw) {
+    const lower = kw.toLowerCase();
     const matched = sortByLatest(
       allData.filter(
         (d) =>
-          d.title.toLowerCase().includes(kw) ||
-          d.content.toLowerCase().includes(kw) ||
-          d.category.toLowerCase().includes(kw) ||
-          d.author.toLowerCase().includes(kw)
+          d.title.toLowerCase().includes(lower) ||
+          d.content.toLowerCase().includes(lower) ||
+          d.category.toLowerCase().includes(lower) ||
+          d.author.toLowerCase().includes(lower)
       )
     );
 
     document.getElementById("search-result-title").textContent = `'${kw}' 검색 결과 (${matched.length}건)`;
     document.getElementById("search-result-list").innerHTML = matched.length
       ? matched.map((m) => `
-          <div class="list-row" onclick="openDetail('${escapeHTML(m.id)}')">
+          <div class="list-row" data-id="${escapeHTML(m.id)}" onclick="openDetail(this.dataset.id)">
             <div class="row-main">
               <span class="badge">${escapeHTML(m.category)}</span>
               <strong class="row-title">${escapeHTML(m.title)}</strong>
               <div class="row-meta">${escapeHTML(m.author)} · ${escapeHTML(m.date)}</div>
             </div>
-            <span style="font-size:12px; color:var(--muted);">👍 ${m.likes}</span>
+            <span style="font-size:12px; color:var(--muted); white-space:nowrap;">👍 ${m.likes}</span>
           </div>
         `).join("")
       : `<div class="empty-msg">일치하는 검색 결과가 없습니다.</div>`;
@@ -1051,6 +1126,8 @@
   // 글 저장 (CREATE & UPDATE)
   async function saveItem() {
     const btn = document.getElementById("save-item-btn");
+    if (btn.disabled) return;
+
     const id = document.getElementById("edit-id").value;
     const type = document.getElementById("edit-type").value;
     const category = document.getElementById("edit-category").value;
@@ -1075,8 +1152,9 @@
           if (ok) showToast("게시글이 수정되었습니다!");
         }
       } else {
+        const newId = String(Date.now());
         const newItem = {
-          id: String(Date.now()),
+          id: newId,
           type,
           category,
           title,
@@ -1088,6 +1166,10 @@
           comments: []
         };
         allData.unshift(newItem);
+        myPostIds.push(newId);
+        localStorage.setItem("campus_my_posts", JSON.stringify(myPostIds));
+
+        resetCategoryTab(type);
         closeModal("editor-modal");
         renderAll();
         const ok = await persistItem(newItem);
@@ -1108,7 +1190,7 @@
     document.getElementById("detail-title").textContent = item.title;
     document.getElementById("detail-meta").textContent = `${item.author} · ${item.date}`;
     document.getElementById("detail-content").textContent = item.content;
-    document.getElementById("detail-likes").textContent = item.likes;
+    document.getElementById("comment-input").value = "";
 
     const extraBox = document.getElementById("detail-extra-box");
     if (item.extra) {
@@ -1117,6 +1199,13 @@
     } else {
       extraBox.style.display = "none";
     }
+
+    // 본인 작성 글일 때만 수정/삭제 버튼 표시
+    document.getElementById("detail-owner-btns").style.display = canManageItem(item) ? "flex" : "none";
+
+    // 공감/스크랩 버튼 상태 동기화
+    updateLikeBtn(item);
+    updateScrapBtn(currentDetailId);
 
     // 게시판 종류에 따른 댓글 안내 문구
     const commentInput = document.getElementById("comment-input");
@@ -1129,9 +1218,21 @@
       commentInput.placeholder = "댓글을 입력하세요...";
     }
 
-    document.getElementById("detail-scrap-btn").textContent = scraps.includes(currentDetailId) ? "⭐ 스크랩됨" : "☆ 스크랩";
     renderComments(item);
     document.getElementById("detail-modal").classList.add("open");
+  }
+
+  function updateLikeBtn(item) {
+    const btn = document.getElementById("detail-like-btn");
+    const isLiked = likedPosts.includes(String(item.id));
+    btn.className = isLiked ? "btn btn-primary" : "btn btn-outline";
+    btn.innerHTML = `${isLiked ? "👍 공감됨" : "👍 공감"} (<span id="detail-likes">${item.likes}</span>)`;
+  }
+
+  function updateScrapBtn(idStr) {
+    const btn = document.getElementById("detail-scrap-btn");
+    const isScrapped = scraps.includes(String(idStr));
+    btn.textContent = isScrapped ? "⭐ 스크랩됨" : "☆ 스크랩";
   }
 
   function renderComments(item) {
@@ -1139,9 +1240,10 @@
     if (countEl) countEl.textContent = item.comments.length;
 
     document.getElementById("detail-comments").innerHTML = item.comments.length
-      ? item.comments.map((c) => `
-          <div style="padding:8px 10px; background:var(--bg); border-radius:8px; margin-bottom:6px; font-size:13px; word-break:break-word;">
-            <strong>${escapeHTML(c.author)}</strong>: ${escapeHTML(c.text)}
+      ? item.comments.map((c, idx) => `
+          <div class="comment-item">
+            <div><strong>${escapeHTML(c.author)}</strong>: ${escapeHTML(c.text)}</div>
+            ${canDeleteComment(c) ? `<button class="comment-del-btn" onclick="deleteComment(${idx})">삭제</button>` : ""}
           </div>
         `).join("")
       : `<div style="font-size:12px; color:var(--muted); padding:6px 0;">첫 댓글을 남겨보세요!</div>`;
@@ -1150,6 +1252,8 @@
   async function addComment() {
     const input = document.getElementById("comment-input");
     const btn = document.getElementById("comment-submit-btn");
+    if (btn.disabled) return;
+
     const text = input.value.trim();
     if (!text) return;
 
@@ -1157,8 +1261,13 @@
     if (!item) return;
 
     btn.disabled = true;
+    const commentId = "c_" + Date.now();
     const commentAuthor = item.type === "anon" ? "익명의 학우" : currentUser;
-    item.comments.push({ author: commentAuthor, text });
+    item.comments.push({ id: commentId, author: commentAuthor, text });
+
+    myCommentIds.push(commentId);
+    localStorage.setItem("campus_my_comments", JSON.stringify(myCommentIds));
+
     input.value = "";
     renderComments(item);
     renderAll();
@@ -1168,15 +1277,50 @@
     if (ok) showToast("댓글이 등록되었습니다.");
   }
 
+  async function deleteComment(index) {
+    const item = allData.find((d) => String(d.id) === String(currentDetailId));
+    if (!item || !item.comments[index]) return;
+    if (!confirm("댓글을 삭제하시겠습니까?")) return;
+
+    const [removed] = item.comments.splice(index, 1);
+    if (removed && removed.id) {
+      myCommentIds = myCommentIds.filter((id) => id !== String(removed.id));
+      localStorage.setItem("campus_my_comments", JSON.stringify(myCommentIds));
+    }
+
+    renderComments(item);
+    renderAll();
+
+    const ok = await persistItem(item);
+    if (ok) showToast("댓글이 삭제되었습니다.");
+  }
+
   async function toggleLike() {
+    const btn = document.getElementById("detail-like-btn");
+    if (btn.disabled) return;
+
     const item = allData.find((d) => String(d.id) === String(currentDetailId));
     if (!item) return;
 
-    item.likes = (Number(item.likes) || 0) + 1;
-    document.getElementById("detail-likes").textContent = item.likes;
+    const idStr = String(item.id);
+    btn.disabled = true;
+
+    if (likedPosts.includes(idStr)) {
+      likedPosts = likedPosts.filter((id) => id !== idStr);
+      item.likes = Math.max(0, (Number(item.likes) || 0) - 1);
+      showToast("공감을 취소했습니다.");
+    } else {
+      likedPosts.push(idStr);
+      item.likes = (Number(item.likes) || 0) + 1;
+      showToast("이 글에 공감했습니다!");
+    }
+
+    localStorage.setItem("campus_likes", JSON.stringify(likedPosts));
+    updateLikeBtn(item);
     renderAll();
 
     await persistItem(item);
+    btn.disabled = false;
   }
 
   function toggleScrap() {
@@ -1189,24 +1333,35 @@
       showToast("스크랩 목록에 추가했습니다.");
     }
     localStorage.setItem("campus_scraps", JSON.stringify(scraps));
-    document.getElementById("detail-scrap-btn").textContent = scraps.includes(idStr) ? "⭐ 스크랩됨" : "☆ 스크랩";
+    updateScrapBtn(idStr);
     renderMypage();
   }
 
   function openEditCurrent() {
     const item = allData.find((d) => String(d.id) === String(currentDetailId));
-    if (!item) return;
+    if (!item || !canManageItem(item)) return;
     closeModal("detail-modal");
     openEditorModal(item.type, item);
   }
 
   async function deleteCurrent() {
+    const delBtn = document.getElementById("detail-delete-btn");
+    if (delBtn.disabled) return;
+
+    const item = allData.find((d) => String(d.id) === String(currentDetailId));
+    if (!item || !canManageItem(item)) return;
     if (!confirm("정말 삭제하시겠습니까?")) return;
+
+    delBtn.disabled = true;
     const targetId = String(currentDetailId);
 
     allData = allData.filter((d) => String(d.id) !== targetId);
-    closeModal("detail-modal");
-    renderAll();
+    scraps = scraps.filter((id) => id !== targetId);
+    likedPosts = likedPosts.filter((id) => id !== targetId);
+    myPostIds = myPostIds.filter((id) => id !== targetId);
+    localStorage.setItem("campus_scraps", JSON.stringify(scraps));
+    localStorage.setItem("campus_likes", JSON.stringify(likedPosts));
+    localStorage.setItem("campus_my_posts", JSON.stringify(myPostIds));
 
     if (SEED_DATA.some((s) => String(s.id) === targetId)) {
       if (!deletedSeeds.includes(targetId)) {
@@ -1214,6 +1369,9 @@
         localStorage.setItem("campus_deleted_seeds", JSON.stringify(deletedSeeds));
       }
     }
+
+    closeModal("detail-modal");
+    renderAll();
 
     if (sheetIds.has(targetId)) {
       const ok = await syncToSheet({ action: "delete", id: targetId });
@@ -1224,6 +1382,7 @@
     } else {
       showToast("게시글이 삭제되었습니다.");
     }
+    delBtn.disabled = false;
   }
 
   function closeModal(id) {
